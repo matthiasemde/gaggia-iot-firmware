@@ -1,18 +1,14 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
- const char* ssid = "Das asoziale Netzwerk 2.4GHz";
-const char* password = "thema1207";
+#include "include/credentials.h"
+#include "include/router.h"
 
+// Create Server 
 ESP8266WebServer server(80);
- 
-// Define routing
-void restServerRouting() {
-    server.on("/", HTTP_GET, []() {
-        server.send(200, F("text/html"),
-            F("No, this is Patrick!"));
-    });
-}
+
+// Create Router
+Router router(&server);
 
 void setup() {
     Serial.begin(115200);
@@ -30,8 +26,9 @@ void setup() {
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
-    // Set server routing
-    restServerRouting();
+
+    // init routing
+    router.init();
 
     // Start server
     server.begin();
