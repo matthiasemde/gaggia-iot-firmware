@@ -2,13 +2,11 @@
 #include <ESP8266WebServer.h>
 
 #include "include/credentials.h"
-#include "include/router.h"
+#include "include/routes/index.h"
+#include "include/routes/sensors.h"
 
 // Create Server 
 ESP8266WebServer server(80);
-
-// Create Router
-Router router(&server);
 
 void setup() {
     Serial.begin(115200);
@@ -28,7 +26,8 @@ void setup() {
 
 
     // init routing
-    router.init();
+    attachIndexRoutes(&server);
+    attachSensorRoutes(&server);
 
     // Start server
     server.begin();
