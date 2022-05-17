@@ -6,7 +6,7 @@ void sayHi(ESP8266WebServer *server) {
 }
 
 void attachIndexRoutes(ESP8266WebServer *server) {
-    server->on("/", HTTP_GET, [&server]() {
+    server->on("/", HTTP_GET, [server]() {
         sayHi(server);
     });
 }

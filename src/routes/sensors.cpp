@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 
 void attachSensorRoutes(ESP8266WebServer *server) {
-    server->on("sensors/", HTTP_GET, [&server]() {
+    server->on("/sensors/", HTTP_GET, [server]() {
         DynamicJsonDocument res(1024);
 
         res["temperature"] = 45.4;
