@@ -1,3 +1,6 @@
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
@@ -7,6 +10,9 @@
 
 // Create Server 
 ESP8266WebServer server(80);
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 void setup() {
     Serial.begin(115200);
@@ -24,10 +30,12 @@ void setup() {
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
+    // start NTP client
+    timeClient.begin();
 
     // init routing
     attachIndexRoutes(&server);
-    attachSensorRoutes(&server);
+    attachSensorRoutes(&server, &timeClient);
 
     // Start server
     server.begin();
@@ -36,4 +44,5 @@ void setup() {
 
 void loop(void) {
     server.handleClient();
+    timeClient.update();
 }
