@@ -12,18 +12,21 @@
 #define TEMP_SPI_CLK D7
 #define TEMP_RREF 430.0
 
+#define MAX_TEMP 140
 
 class Sensor {
 private:
-    float_t value;
-    float_t controlTarget;
+    float value;
+    uint16_t controlTarget;
+
+    uint16_t maxTarget;
 public:
     String displayName;
-    Sensor(String name);
-    float_t getValue();
-    float_t getControlTarget();
-    void setValue(float_t newValue);
-    void setControlTarget(float_t newTarget);
+    Sensor(String name, uint16_t maxTarget);
+    float getValue();
+    uint16_t getControlTarget();
+    void setValue(float newValue);
+    void setControlTarget(uint16_t newTarget);
     virtual void updateValue() = 0;
     virtual void updateControler() = 0;
     virtual String status() = 0;
