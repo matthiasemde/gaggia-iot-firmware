@@ -1,12 +1,13 @@
-#include "../../include/routes/sensors.h"
 #include <ArduinoJson.h>
 
-void attachSensorRoutes(ESP8266WebServer *server, NTPClient *timeClient) {
-    server->on("/sensors/", HTTP_GET, [server, timeClient]() {
+#include "../../include/routes/info.h"
+
+void attachSensorRoutes(ESP8266WebServer* server, NTPClient* timeClient, Sensor** sensors) {
+    server->on("/info/sensors", HTTP_GET, [server, timeClient, sensors]() {
         DynamicJsonDocument res(1024);
 
         res["time"] = timeClient->getEpochTime();
-        res["temperature"] = 45.4;
+        res["temperature"] = sensors[TEMP_IDX]->getValue();
         res["pressure"] = 7.64;
 
         uint8_t resLength = measureJsonPretty(res);
