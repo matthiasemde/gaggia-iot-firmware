@@ -1,26 +1,28 @@
 #include "../include/sensors.h"
 
-Sensor::Sensor(String name) {
+Sensor::Sensor(String name, uint16_t maxTarget) {
     this->displayName = name;
+    this->maxTarget = maxTarget;
 }
 
-float_t Sensor::getValue() {
+float Sensor::getValue() {
     return this->value;
 }
 
-float_t Sensor::getControlTarget() {
+uint16_t Sensor::getControlTarget() {
     return this->controlTarget;
 }
 
-void Sensor::setValue(float_t newValue) {
+void Sensor::setValue(float newValue) {
     this->value = newValue;
 }
 
-void Sensor::setControlTarget(float_t newTarget) {
-    this->controlTarget = newTarget;
+void Sensor::setControlTarget(uint16_t newTarget) {
+    this->controlTarget = (newTarget < this->maxTarget) ? newTarget : this->maxTarget;
 }
 
-TemperatureSensor::TemperatureSensor() : Sensor("Temperature") {
+TemperatureSensor::TemperatureSensor() 
+: Sensor("Temperature", MAX_TEMP) {
     this->setControlTarget(0);
     this->maxBoard = new Adafruit_MAX31865(
         TEMP_SPI_CS,
@@ -39,7 +41,7 @@ void TemperatureSensor::updateControler() {
 }
 
 String TemperatureSensor::status() {
-    String status = "Ok";
+    String status = "";
     // Check and print any faults
     uint8_t fault = this->maxBoard->readFault();
     if (fault) {
@@ -65,5 +67,7 @@ String TemperatureSensor::status() {
         }
         this->maxBoard->clearFault();
     }
+    status += "\nValue: " + String(this->getValue()) + "\nControlTarget: " + String(this->getControlTarget()) + "\n";
+
     return status;
 }
