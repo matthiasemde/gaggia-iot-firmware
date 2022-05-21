@@ -60,7 +60,7 @@ void loop(void) {
     Sensor** s = sensors;
     for(int _=0; _ < NUM_SENSORS; _++) {
         (*s)->updateValue();
-        (*s)->updateControler();
+        (*s)->updateController();
         if(millis() % 1000 < 10) {
             Serial.println("Status of " + (*s)->displayName + " Sensor: " + (*s)->status());
         }

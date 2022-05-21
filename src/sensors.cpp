@@ -29,13 +29,16 @@ TemperatureSensor::TemperatureSensor() : Sensor("Temperature") {
         TEMP_SPI_CLK
     );
     this->maxBoard->begin(MAX31865_3WIRE);
+
+    this->controller = new PID(kp, ki, kd, 0, 100);
 }
 
 void TemperatureSensor::updateValue() {
     this->setValue(this->maxBoard->temperature(100, TEMP_RREF));
 }
 
-void TemperatureSensor::updateControler() {
+void TemperatureSensor::updateController() {
+    this->controller->update();
 }
 
 String TemperatureSensor::status() {
