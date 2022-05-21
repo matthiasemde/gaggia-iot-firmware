@@ -14,7 +14,7 @@ void attachSensorRoutes(ESP8266WebServer* server, NTPClient* timeClient, Sensor*
         char *buf = (char*) malloc(resLength * sizeof(char));
         
         serializeJsonPretty(res, buf, resLength);
-        server->send(200, "json", (const char *)buf);
+        server->send(200, "application/json", (const char *)buf);
 
         free(buf);
     });

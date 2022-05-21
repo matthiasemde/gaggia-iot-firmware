@@ -21,7 +21,13 @@ void Sensor::setControlTarget(float_t newTarget) {
 }
 
 TemperatureSensor::TemperatureSensor() : Sensor("Temperature") {
-    this->maxBoard = new Adafruit_MAX31865(TEMP_SPI_CS);
+    this->setControlTarget(0);
+    this->maxBoard = new Adafruit_MAX31865(
+        TEMP_SPI_CS,
+        TEMP_SPI_DI,
+        TEMP_SPI_DO,
+        TEMP_SPI_CLK
+    );
     this->maxBoard->begin(MAX31865_3WIRE);
 }
 
@@ -40,22 +46,22 @@ String TemperatureSensor::status() {
         status = "Fault 0x";
         status += fault;
         if (fault & MAX31865_FAULT_HIGHTHRESH) {
-            status += " - RTD High Threshold"; 
+            status += "\nRTD High Threshold"; 
         }
         if (fault & MAX31865_FAULT_LOWTHRESH) {
-            status = " - RTD Low Threshold"; 
+            status = "\nRTD Low Threshold"; 
         }
         if (fault & MAX31865_FAULT_REFINLOW) {
-            status = " - REFIN- > 0.85 x Bias"; 
+            status = "\nREFIN- > 0.85 x Bias"; 
         }
         if (fault & MAX31865_FAULT_REFINHIGH) {
-            status = " - REFIN- < 0.85 x Bias - FORCE- open"; 
+            status = "\nREFIN- < 0.85 x Bias - FORCE- open"; 
         }
         if (fault & MAX31865_FAULT_RTDINLOW) {
-            status = " - RTDIN- < 0.85 x Bias - FORCE- open"; 
+            status = "\nRTDIN- < 0.85 x Bias - FORCE- open"; 
         }
         if (fault & MAX31865_FAULT_OVUV) {
-            status = " - Under/Over voltage"; 
+            status = "\nUnder/Over voltage"; 
         }
         this->maxBoard->clearFault();
     }
