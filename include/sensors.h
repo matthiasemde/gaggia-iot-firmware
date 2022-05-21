@@ -3,6 +3,8 @@
 
 #include <Adafruit_MAX31865.h>
 
+#include "pid.h" 
+
 #define NUM_SENSORS 1
 
 #define TEMP_IDX 0
@@ -11,6 +13,10 @@
 #define TEMP_SPI_DO D6
 #define TEMP_SPI_CLK D7
 #define TEMP_RREF 430.0
+
+const float kp = 1.0;
+const float ki = 1.0;
+const float kd = 1.0;
 
 
 class Sensor {
@@ -25,17 +31,18 @@ public:
     void setValue(float_t newValue);
     void setControlTarget(float_t newTarget);
     virtual void updateValue() = 0;
-    virtual void updateControler() = 0;
+    virtual void updateController() = 0;
     virtual String status() = 0;
 };
 
 class TemperatureSensor : public Sensor {
 private:
     Adafruit_MAX31865* maxBoard;
+    PID* controller;
 public:
     TemperatureSensor();
     void updateValue();
-    void updateControler();
+    void updateController();
     String status();
 };
 
