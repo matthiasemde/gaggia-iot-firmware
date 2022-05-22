@@ -5,6 +5,8 @@
 
 #define TEMP_IDX 0
 
+#define MAX_TEMP 140
+
 #define TEMP_SPI_CS D0
 #define TEMP_SPI_DI D5
 #define TEMP_SPI_DO D6

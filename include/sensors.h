@@ -9,15 +9,16 @@
 class Sensor {
 private:
     float value;
-    float controlTarget;
+    uint16_t controlTarget;
+    uint16_t maxTarget;
     float controlValue;
 public:
     String displayName;
-    Sensor(String name);
+    Sensor(String name, uint16_t maxTarget);
     float getValue();
-    float getControlTarget();
+    uint16_t getControlTarget();
     void setValue(float newValue);
-    void setControlTarget(float newTarget);
+    void setControlTarget(uint16_t newTarget);
     void setControlValue(float newControlValue);
     virtual void updateValue() = 0;
     virtual void updateController() = 0;

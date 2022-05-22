@@ -7,6 +7,7 @@
 #include "include/credentials.h"
 #include "include/routes/index.h"
 #include "include/routes/info.h"
+#include "include/routes/directControl.h"
 
 #include "include/sensors.h"
 
@@ -47,6 +48,7 @@ void setup() {
     // init routing
     attachIndexRoutes(server);
     attachSensorRoutes(server, &timeClient, sensors);
+    attachDirectControlRoutes(server, &timeClient, sensors);
 
     // Start server
     server->begin();
