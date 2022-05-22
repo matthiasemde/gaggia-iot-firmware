@@ -1,10 +1,10 @@
 #include "../include/io.h"
 
-void init() {
+void IO::init() {
     digitalWrite(PIEZO, LOW);
     pinMode(PIEZO, OUTPUT);
 }
 
-void sayHello() {
+void IO::sayHello() {
     tone(PIEZO, 1000, 1000);
 }

@@ -2,9 +2,9 @@
 #include "../../include/io.h"
 
 void sayHi(ESP8266WebServer *server) {
+    IO::sayHello();
     server->send(200, F("text/html"),
     F("No, this is Patrick!"));
-    sayHello();
 }
 
 void attachIndexRoutes(ESP8266WebServer *server) {

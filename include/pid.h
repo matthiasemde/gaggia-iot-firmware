@@ -1,6 +1,8 @@
 #ifndef __PID_H__
 #define __PID_H__
 
+#include <Arduino.h>
+
 class PID {
 private:
     float integral = 0; // integral over error

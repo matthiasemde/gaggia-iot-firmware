@@ -12,7 +12,6 @@
 #include "include/io.h"
 #include "include/sensors.h"
 
-
 // Create Server 
 ESP8266WebServer* server = new ESP8266WebServer(80);
 
@@ -24,12 +23,11 @@ Sensor* sensors[NUM_SENSORS];
 void setup() {
     Serial.begin(115200);
 
-    init();
+    IO::init();
 
     // initialize hardware
     Serial.println("Initializing hardware\n");
     sensors[TEMP_IDX] = new TemperatureSensor();
-
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);

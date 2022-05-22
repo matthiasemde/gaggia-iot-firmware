@@ -21,6 +21,10 @@ void Sensor::setControlTarget(uint16_t newTarget) {
     this->controlTarget = (newTarget < this->maxTarget) ? newTarget : this->maxTarget;
 }
 
+void Sensor::setControlValue(float newControlValue) {
+    this->controlValue = newControlValue;
+}
+
 TemperatureSensor::TemperatureSensor() 
 : Sensor("Temperature", MAX_TEMP) {
     this->setControlTarget(0);
@@ -47,7 +51,6 @@ void TemperatureSensor::updateController() {
     float nextControlValue;
     if (this->controller->update(this->getValue(), &nextControlValue)) {
         this->setControlValue(nextControlValue);
-        analogWrite(TEMP_CTRL, (int) constrain((nextControlValue * 1023), 0, 1023));
     }
 }
 
