@@ -6,15 +6,6 @@
 
 #include "pid.h" 
 
-#define NUM_SENSORS 1
-
-#define TEMP_IDX 0
-
-#define TEMP_PMW_FREQ 100
-
-#define TEMP_RREF 430.0
-
-
 class Sensor {
 private:
     float value;
