@@ -4,13 +4,14 @@ PID::PID(
     float kp,
     float ki,
     float kd,
-    float target,
+    float controlTarget,
     uint16_t period
 ) {
     this->kp = kp;
     this->ki = ki;
-    this->kd = kd;    
-    this->target = target;
+    this->kd = kd;
+
+    this->controlTarget = controlTarget;
 
     this->period = period;
     this->dt = (float)period / 1000;
@@ -18,30 +19,29 @@ PID::PID(
     this->lastUpdate = millis();
 }
 
-void PID::setTarget(float newTarget) {
-    this->target = newTarget;
+void PID::setControlTarget(float newControlTarget) {
+    this->controlTarget = newControlTarget;
 }
 
-void PID::update() {
+bool PID::update(float input, float* nextControlValue) {
     uint32_t now = millis();
     if (this->lastUpdate + this->period > now) {
         this->lastUpdate = now;
         
-        float error = this->target - *(this->input);
+        float error = this->controlTarget - input;
 
         this->integral += error * this->dt;
         
         float derivative = (error - this->lastError) * this->dt;
 
-        this->action = 
+        *nextControlValue = 
             this->kp * error + 
             this->ki * this->integral +
             this->kd * derivative;
 
         this->lastError = error;
-    }
-};
 
-float PID::getAction() {
-    return this->action;
-}
+        return true;
+    }
+    return false;
+};

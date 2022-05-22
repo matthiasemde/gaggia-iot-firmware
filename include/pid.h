@@ -9,16 +9,20 @@ private:
     uint16_t period; // period of controller updates in ms
     float dt; // period in seconds for calculating integral and derivative
 
-    float* input; // address of controller input 
-    float target;
-    float action; // action which should be taken according to PID
+    // float (*getInput)(); // address of controller input 
+    float controlTarget;
 
     float kp, ki, kd; // koefficients for P-, I- and D-term
 public:
-    PID(float kp, float ki, float kd, float target, uint16_t period);
-    void setTarget(float newTarget);
-    void update();
-    float getAction();
+    PID(
+        float kp,
+        float ki,
+        float kd,
+        float controlTarget,
+        uint16_t period
+    );
+    void setControlTarget(float newControlTarget);
+    bool update(float input, float* nextControlValue);
 };
 
 #endif

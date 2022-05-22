@@ -4,19 +4,19 @@ Sensor::Sensor(String name) {
     this->displayName = name;
 }
 
-float_t Sensor::getValue() {
+float Sensor::getValue() {
     return this->value;
 }
 
-float_t Sensor::getControlTarget() {
+float Sensor::getControlTarget() {
     return this->controlTarget;
 }
 
-void Sensor::setValue(float_t newValue) {
+void Sensor::setValue(float newValue) {
     this->value = newValue;
 }
 
-void Sensor::setControlTarget(float_t newTarget) {
+void Sensor::setControlTarget(float newTarget) {
     this->controlTarget = newTarget;
 }
 
@@ -31,6 +31,10 @@ TemperatureSensor::TemperatureSensor() : Sensor("Temperature") {
     this->maxBoard->begin(MAX31865_3WIRE);
 
     this->controller = new PID(kp, ki, kd, 0, 100);
+
+    analogWrite(TEMP_CTRL, 0);
+    analogWriteFreq(TEMP_PMW_FREQ);
+    pinMode(TEMP_CTRL, OUTPUT);
 }
 
 void TemperatureSensor::updateValue() {
@@ -38,7 +42,10 @@ void TemperatureSensor::updateValue() {
 }
 
 void TemperatureSensor::updateController() {
-    this->controller->update();
+    float nextControlValue;
+    if (this->controller->update(this->getValue(), &nextControlValue)) {
+        this->setControlValue(nextControlValue);
+    }
 }
 
 String TemperatureSensor::status() {
