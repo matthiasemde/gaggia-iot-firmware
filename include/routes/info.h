@@ -1,5 +1,5 @@
-#ifndef __INFO__
-#define __INFO__
+#ifndef __INFO_H__
+#define __INFO_H__
 
 #include <ESP8266WebServer.h>
 #include <NTPClient.h>

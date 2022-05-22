@@ -1,5 +1,5 @@
-#ifndef __PID__
-#define __PID__
+#ifndef __PID_H__
+#define __PID_H__
 
 class PID {
 private:

@@ -47,6 +47,7 @@ void TemperatureSensor::updateController() {
     float nextControlValue;
     if (this->controller->update(this->getValue(), &nextControlValue)) {
         this->setControlValue(nextControlValue);
+        analogWrite(TEMP_CTRL, (int) constrain((nextControlValue * 1023), 0, 1023));
     }
 }
 

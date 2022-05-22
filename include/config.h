@@ -22,4 +22,6 @@ const float kp = 1.0;
 const float ki = 1.0;
 const float kd = 1.0;
 
+#define PIEZO D2
+
 #endif

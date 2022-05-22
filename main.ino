@@ -9,7 +9,9 @@
 #include "include/routes/info.h"
 #include "include/routes/directControl.h"
 
+#include "include/io.h"
 #include "include/sensors.h"
+
 
 // Create Server 
 ESP8266WebServer* server = new ESP8266WebServer(80);
@@ -22,6 +24,7 @@ Sensor* sensors[NUM_SENSORS];
 void setup() {
     Serial.begin(115200);
 
+    init();
 
     // initialize hardware
     Serial.println("Initializing hardware\n");
