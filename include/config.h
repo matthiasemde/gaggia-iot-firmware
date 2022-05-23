@@ -24,4 +24,7 @@ const float kd = 1.0;
 
 #define PIEZO D2
 
+#define PUMP_BUTTON D3
+#define STEAM_BUTTON D4
+
 #endif

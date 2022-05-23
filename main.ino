@@ -20,6 +20,8 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 Sensor* sensors[NUM_SENSORS];
 
+uint32_t lastStatusUpdate = 0;
+
 void setup() {
     Serial.begin(115200);
 
@@ -57,6 +59,12 @@ void setup() {
 }
 
 void loop(void) {
+    bool doStatusUpdate = (lastStatusUpdate + 1000 < millis());
+    if (doStatusUpdate) {
+        lastStatusUpdate = millis();
+        Serial.println("\nStatus update!");
+    }
+
     server->handleClient();
     timeClient.update();
 
@@ -64,9 +72,18 @@ void loop(void) {
     for(int _=0; _ < NUM_SENSORS; _++) {
         (*s)->updateValue();
         (*s)->updateController();
-        if(millis() % 1000 < 10) {
+        if(doStatusUpdate) {
             Serial.println("Status of " + (*s)->displayName + " Sensor: " + (*s)->status());
         }
         s++;
+    }
+
+    uint8_t buttonState = IO::getButtonState();
+    if(doStatusUpdate) {
+        Serial.println((String)"Button state:\nPump: " +
+            ((buttonState & PUMP_BUTTON_MASK) ? "on" : "off") +
+            "\nSteam: " +
+            ((buttonState & STEAM_BUTTON_MASK) ? "on" : "off")
+        );
     }
 }
