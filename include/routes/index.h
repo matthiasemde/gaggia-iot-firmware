@@ -1,10 +1,13 @@
-#ifndef __INDEXROUTER__
-#define __INDEXROUTER__
+#ifndef __INDEX_ROUTER_H__
+#define __INDEX_ROUTER_H__
 
 #include <ESP8266WebServer.h>
 
-void sayHi(ESP8266WebServer *server);
+#include "../../include/io.h"
 
-void attachIndexRoutes(ESP8266WebServer *server);
+namespace IndexRouter {
+    void sayHi(ESP8266WebServer *server);
+    void attach(ESP8266WebServer *server);
+};
 
 #endif

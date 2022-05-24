@@ -25,6 +25,7 @@ public:
     );
     void setControlTarget(float newControlTarget);
     bool update(float input, float* nextControlValue);
+    String status();
 };
 
 #endif

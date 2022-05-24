@@ -45,3 +45,10 @@ bool PID::update(float input, float* nextControlValue) {
     }
     return false;
 };
+
+String PID::status() {
+    String status = "Control Target: ";
+    status += this->controlTarget;
+    status += "\n";
+    return status;
+}

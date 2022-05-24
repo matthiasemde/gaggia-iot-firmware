@@ -1,57 +1,52 @@
 #include "../include/sensors.h"
 
-Sensor::Sensor(String name, uint16_t maxTarget) {
+//// Class Sensor ////
+
+// Constructor
+Sensor::Sensor(String name, float smoothingCoefficient) {
     this->displayName = name;
-    this->maxTarget = maxTarget;
+    
+    this->rawValue = 0;
+    this->smoothedValue = 0;
+    this->smoothingCoefficient = smoothingCoefficient;
 }
 
-float Sensor::getValue() {
-    return this->value;
+// Accessors
+float Sensor::getRawValue() {
+    return this->rawValue;
 }
 
-uint16_t Sensor::getControlTarget() {
-    return this->controlTarget;
+float Sensor::getSmoothedValue() {
+    return this->smoothedValue;
 }
 
-void Sensor::setValue(float newValue) {
-    this->value = newValue;
+// Mutators
+void Sensor::setRawValue(float newValue) {
+    this->rawValue = newValue;
+
+    // implement running average
+    this->smoothedValue =
+        this->smoothedValue * this->smoothingCoefficient +
+        newValue * (1-this->smoothingCoefficient);
 }
 
-void Sensor::setControlTarget(uint16_t newTarget) {
-    this->controlTarget = (newTarget < this->maxTarget) ? newTarget : this->maxTarget;
-}
 
-void Sensor::setControlValue(float newControlValue) {
-    this->controlValue = newControlValue;
-}
+//// Class TemperaturSensor ////
 
-TemperatureSensor::TemperatureSensor() 
-: Sensor("Temperature", MAX_TEMP) {
-    this->setControlTarget(0);
+// Constructor
+TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient) 
+: Sensor("Temperature", smoothingCoefficient) {
     this->maxBoard = new Adafruit_MAX31865(
-        TEMP_SPI_CS,
-        TEMP_SPI_DI,
-        TEMP_SPI_DO,
-        TEMP_SPI_CLK
+        csPin,
+        SPI_DI_PIN,
+        SPI_DO_PIN,
+        SPI_CLK_PIN
     );
     this->maxBoard->begin(MAX31865_3WIRE);
-
-    this->controller = new PID(kp, ki, kd, 0, 100);
-
-    analogWrite(TEMP_CTRL, 0);
-    analogWriteFreq(TEMP_PMW_FREQ);
-    pinMode(TEMP_CTRL, OUTPUT);
 }
 
-void TemperatureSensor::updateValue() {
-    this->setValue(this->maxBoard->temperature(100, TEMP_RREF));
-}
-
-void TemperatureSensor::updateController() {
-    float nextControlValue;
-    if (this->controller->update(this->getValue(), &nextControlValue)) {
-        this->setControlValue(nextControlValue);
-    }
+void TemperatureSensor::update() {
+    this->setRawValue(this->maxBoard->temperature(100, this->rRef));
 }
 
 String TemperatureSensor::status() {
@@ -81,7 +76,25 @@ String TemperatureSensor::status() {
         }
         this->maxBoard->clearFault();
     }
-    status += "\nValue: " + String(this->getValue()) + "\nControlTarget: " + String(this->getControlTarget()) + "\n";
+    status += "\nSmoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
 
     return status;
+}
+
+
+//// Class PressureSensor ////
+
+// Constructor
+PressureSensor::PressureSensor(uint8_t inputPin, float smoothingCoefficient)
+: Sensor("Pressure", smoothingCoefficient) {
+    this->inputPin = inputPin;
+    pinMode(this->inputPin, INPUT);
+}
+
+void PressureSensor::update() {
+    this->setRawValue(analogRead(this->inputPin));
+}
+
+String PressureSensor::status() {
+    return "TODO Pressure Sensor";
 }

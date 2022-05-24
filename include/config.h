@@ -1,22 +1,16 @@
 #ifndef __CONFIG__
 #define __CONFIG__
 
-#define NUM_SENSORS 1
+#define MAX_TEMP_TARGET 140
 
-#define TEMP_IDX 0
-
-#define MAX_TEMP 140
-
-#define TEMP_SPI_CS D0
-#define TEMP_SPI_DI D5
-#define TEMP_SPI_DO D6
-#define TEMP_SPI_CLK D7
+#define TEMP_CS_PIN D0
+#define SPI_DI_PIN D5
+#define SPI_DO_PIN D6
+#define SPI_CLK_PIN D7
 
 #define TEMP_RREF 430.0
 
-#define TEMP_CTRL D1
-
-#define TEMP_PMW_FREQ 100
+#define HEATER_BLOCK_PIN D1
 
 const float kp = 1.0;
 const float ki = 1.0;
@@ -26,5 +20,16 @@ const float kd = 1.0;
 
 #define PUMP_BUTTON D3
 #define STEAM_BUTTON D4
+
+#define SOLENOID_VALVE_PIN D8
+#define HEATER_BLOCK_PIN D8
+#define PUMP_PIN D8
+
+#define PMW_FREQUENCY 100
+#define PWM_RESOLUTION 1024
+
+#define PRESSURE_SENSOR_PIN D3
+
+const float smoothingCoefficient = 0.5;
 
 #endif

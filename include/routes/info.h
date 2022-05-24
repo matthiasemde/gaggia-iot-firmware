@@ -3,9 +3,12 @@
 
 #include <ESP8266WebServer.h>
 #include <NTPClient.h>
+#include <ArduinoJson.h>
 
-#include "../../include/sensors.h"
+#include "../../include/control.h"
 
-void attachSensorRoutes(ESP8266WebServer *server, NTPClient *timeClient, Sensor** sensors);
+namespace SensorRouter {
+    void attach(ESP8266WebServer *server, NTPClient *timeClient);
+};
 
 #endif

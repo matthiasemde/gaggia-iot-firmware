@@ -10,15 +10,13 @@
 #include "include/routes/directControl.h"
 
 #include "include/io.h"
-#include "include/sensors.h"
+#include "include/control.h"
 
 // Create Server 
 ESP8266WebServer* server = new ESP8266WebServer(80);
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
-
-Sensor* sensors[NUM_SENSORS];
 
 uint32_t lastStatusUpdate = 0;
 
@@ -29,7 +27,6 @@ void setup() {
 
     // initialize hardware
     Serial.println("Initializing hardware\n");
-    sensors[TEMP_IDX] = new TemperatureSensor();
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -49,9 +46,9 @@ void setup() {
     timeClient.begin();
 
     // init routing
-    attachIndexRoutes(server);
-    attachSensorRoutes(server, &timeClient, sensors);
-    attachDirectControlRoutes(server, &timeClient, sensors);
+    IndexRouter::attach(server);
+    SensorRouter::attach(server, &timeClient);
+    DirectControlRouter::attach(server, &timeClient);
 
     // Start server
     server->begin();
@@ -68,15 +65,7 @@ void loop(void) {
     server->handleClient();
     timeClient.update();
 
-    Sensor** s = sensors;
-    for(int _=0; _ < NUM_SENSORS; _++) {
-        (*s)->updateValue();
-        (*s)->updateController();
-        if(doStatusUpdate) {
-            Serial.println("Status of " + (*s)->displayName + " Sensor: " + (*s)->status());
-        }
-        s++;
-    }
+    Control::update();
 
     uint8_t buttonState = IO::getButtonState();
     if(doStatusUpdate) {
