@@ -13,9 +13,17 @@ void IO::sayHello() {
 }
 
 uint8_t IO::getButtonState() {
-    uint8_t buttonState = 0;
-    buttonState =
+    return
         !(digitalRead(PUMP_BUTTON)) * PUMP_BUTTON_MASK | 
         !(digitalRead(STEAM_BUTTON)) * STEAM_BUTTON_MASK;
-    return buttonState;
+}
+
+String IO::status() {
+    String status = "";
+    uint8_t buttonState = getButtonState();
+    status += (String) "Button state:\nPump: " +
+        ((buttonState & PUMP_BUTTON_MASK) ? "on" : "off") +
+        "\nSteam: " +
+        ((buttonState & STEAM_BUTTON_MASK) ? "on" : "off");
+    return status;
 }

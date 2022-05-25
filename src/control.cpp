@@ -96,17 +96,17 @@ void Control::update() {
 }
 
 String Control::status() {
-    String status = "\n/////////////// Control elements status ///////////////\n";
-    status += "\nTemperature sensor:\n";
+    String status = "";
+    status += "Temperature sensor:\n";
     status += temperatureSensor->status();
-    status += "Pressure sensor:\n";
+    status += "\nPressure sensor:\n";
     status += pressureSensor->status();
     // status += "\nFlow sensor:\n";
     // status += flowSensor->status();
 
     status += "\nTemperature controller:\n";
     status += temperatureController->status();
-    status += "Pressure controller:\n";
+    status += "\nPressure controller:\n";
     status += pressureController->status();
     // status += "\nFlow controller:\n";
     // status += flowController->status();

@@ -23,10 +23,9 @@ uint32_t lastStatusUpdate = 0;
 void setup() {
     Serial.begin(115200);
 
+    // initialize input output module
     IO::init();
 
-    // initialize hardware
-    Serial.println("Initializing hardware\n");
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -56,23 +55,17 @@ void setup() {
 }
 
 void loop(void) {
-    bool doStatusUpdate = (lastStatusUpdate + 1000 < millis());
-    if (doStatusUpdate) {
-        lastStatusUpdate = millis();
-        Serial.println("\nStatus update!");
-    }
 
     server->handleClient();
     timeClient.update();
 
     Control::update();
 
-    uint8_t buttonState = IO::getButtonState();
-    if(doStatusUpdate) {
-        Serial.println((String)"Button state:\nPump: " +
-            ((buttonState & PUMP_BUTTON_MASK) ? "on" : "off") +
-            "\nSteam: " +
-            ((buttonState & STEAM_BUTTON_MASK) ? "on" : "off")
-        );
+    // Status update
+    if (lastStatusUpdate + 5000 < millis()) {
+        lastStatusUpdate = millis();
+        Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
+        Serial.println("\n///////// Control status /////////\n" + Control::status());
+        Serial.println("\n/////////    IO status   /////////\n" + IO::status());
     }
 }

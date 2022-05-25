@@ -12,6 +12,7 @@ namespace IO {
     void init();
     void sayHello();
     uint8_t getButtonState();
+    String status();
 }
 
 #endif

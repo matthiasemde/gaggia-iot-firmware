@@ -47,6 +47,7 @@ TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingC
 
 void TemperatureSensor::update() {
     this->setRawValue(this->maxBoard->temperature(100, this->rRef));
+    // Serial.println(this->maxBoard->temperature(100, this->rRef));
 }
 
 String TemperatureSensor::status() {
@@ -57,26 +58,26 @@ String TemperatureSensor::status() {
         status = "Fault 0x";
         status += fault;
         if (fault & MAX31865_FAULT_HIGHTHRESH) {
-            status += "\nRTD High Threshold"; 
+            status += "\nRTD High Threshold\n"; 
         }
         if (fault & MAX31865_FAULT_LOWTHRESH) {
-            status = "\nRTD Low Threshold"; 
+            status = "\nRTD Low Threshold\n"; 
         }
         if (fault & MAX31865_FAULT_REFINLOW) {
-            status = "\nREFIN- > 0.85 x Bias"; 
+            status = "\nREFIN- > 0.85 x Bias\n"; 
         }
         if (fault & MAX31865_FAULT_REFINHIGH) {
-            status = "\nREFIN- < 0.85 x Bias - FORCE- open"; 
+            status = "\nREFIN- < 0.85 x Bias - FORCE- open\n"; 
         }
         if (fault & MAX31865_FAULT_RTDINLOW) {
-            status = "\nRTDIN- < 0.85 x Bias - FORCE- open"; 
+            status = "\nRTDIN- < 0.85 x Bias - FORCE- open\n"; 
         }
         if (fault & MAX31865_FAULT_OVUV) {
-            status = "\nUnder/Over voltage"; 
+            status = "\nUnder/Over voltage\n"; 
         }
         this->maxBoard->clearFault();
     }
-    status += "\nSmoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
+    status += "Smoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
 
     return status;
 }
@@ -96,5 +97,5 @@ void PressureSensor::update() {
 }
 
 String PressureSensor::status() {
-    return "TODO Pressure Sensor";
+    return "TODO Pressure Sensor\n";
 }
