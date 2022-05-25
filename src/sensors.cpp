@@ -36,6 +36,7 @@ void Sensor::setRawValue(float newValue) {
 // Constructor
 TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient) 
 : Sensor("Temperature", smoothingCoefficient) {
+    this->rRef = rRef;
     this->maxBoard = new Adafruit_MAX31865(
         csPin,
         SPI_DI_PIN,

@@ -99,18 +99,19 @@ String Control::status() {
     String status = "";
     status += "Temperature sensor:\n";
     status += temperatureSensor->status();
-    status += "\nPressure sensor:\n";
-    status += pressureSensor->status();
-    // status += "\nFlow sensor:\n";
-    // status += flowSensor->status();
-
     status += "\nTemperature controller:\n";
     status += temperatureController->status();
+
+    status += "\nPressure sensor:\n";
+    status += pressureSensor->status();
     status += "\nPressure controller:\n";
     status += pressureController->status();
+
+    // status += "\n\nFlow sensor:\n";
+    // status += flowSensor->status();
     // status += "\nFlow controller:\n";
     // status += flowController->status();
 
-    status += "\nSolenoid valve: " + solenoidValve->getState();
+    status += (String)"\nSolenoid valve: " + ((solenoidValve->getState() == (uint8_t)SolenoidState::OPEN) ? "Open" : "Closed") + "\n";
     return status;
 }
