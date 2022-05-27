@@ -1,6 +1,6 @@
 #include "../../include/routes/info.h"
 
-void SensorRouter::attach(ESP8266WebServer* server, NTPClient* timeClient) {
+void InfoRouter::attach(ESP8266WebServer* server, NTPClient* timeClient) {
     server->on("/info/sensors", HTTP_GET, [server, timeClient]() {
         DynamicJsonDocument res(1024);
 

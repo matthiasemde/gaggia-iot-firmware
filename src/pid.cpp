@@ -20,6 +20,7 @@ PID::PID(
 }
 
 void PID::setControlTarget(float newControlTarget) {
+    this->integral = 0;
     this->controlTarget = newControlTarget;
 }
 
@@ -45,6 +46,11 @@ bool PID::update(float input, float* nextControlValue) {
     }
     return false;
 };
+
+void PID::reset() {
+    this->integral = 0;
+    this->lastError = 0;
+}
 
 String PID::status() {
     String status = "Control Target: ";

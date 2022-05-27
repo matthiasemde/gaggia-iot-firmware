@@ -98,5 +98,5 @@ void PressureSensor::update() {
 }
 
 String PressureSensor::status() {
-    return "TODO Pressure Sensor\n";
+    return "Smoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
 }

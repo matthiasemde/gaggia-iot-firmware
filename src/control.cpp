@@ -1,30 +1,31 @@
 #include "../include/control.h"
 
-auto controlMode = PumpControlMode::PRESSURE;
+namespace {
+    auto controlMode = PumpControlMode::PRESSURE;
 
-// Sensors
-auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
-auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient);
-Sensor* sensors[2] = {
-    (Sensor*)temperatureSensor,
-    (Sensor*)pressureSensor
-};
+    // Sensors
+    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
+    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient);
+    Sensor* sensors[2] = {
+        (Sensor*)temperatureSensor,
+        (Sensor*)pressureSensor
+    };
 
-// Controllers
-auto temperatureController = new PID(kp, ki, kd, 0, 100);
-auto pressureController = new PID(kp, ki, kd, 0, 100);
-// auto flowController = new PID(kp, ki, kd, 0, 100);
-PID* controllers[2] = {
-    temperatureController,
-    pressureController
-};
+    // Controllers
+    auto temperatureController = new PID(kp, ki, kd, 0, 100);
+    auto pressureController = new PID(kp, ki, kd, 0, 100);
+    // auto flowController = new PID(kp, ki, kd, 0, 100);
+    PID* controllers[2] = {
+        temperatureController,
+        pressureController
+    };
 
-// Actors
-auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED);
+    // Actors
+    auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED);
 
-auto heaterBlock = new PwmActor(HEATER_BLOCK_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
-auto pump = new PwmActor(PUMP_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
-
+    auto heaterBlock = new PwmActor(HEATER_BLOCK_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
+    auto pump = new PwmActor(PUMP_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
+}
 
 
 // Accessors

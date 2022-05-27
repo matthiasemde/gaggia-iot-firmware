@@ -7,7 +7,7 @@
 
 #include "../../include/control.h"
 
-namespace SensorRouter {
+namespace InfoRouter {
     void attach(ESP8266WebServer *server, NTPClient *timeClient);
 };
 

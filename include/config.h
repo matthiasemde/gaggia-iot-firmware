@@ -28,7 +28,9 @@ const float kd = 1.0;
 #define PMW_FREQUENCY 100
 #define PWM_RESOLUTION 1024
 
-#define PRESSURE_SENSOR_PIN D3
+#define PRESSURE_SENSOR_PIN A0
+
+#define PRESSURE_SENSOR_AT_1_BAR 170
 
 const float smoothingCoefficient = 0.5;
 
