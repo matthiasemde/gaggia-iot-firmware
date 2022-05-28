@@ -1,7 +1,11 @@
 #include "../include/control.h"
 
+#include "../include/storage.h"
+
 namespace {
     auto controlMode = PumpControlMode::PRESSURE;
+
+    Configuration activeConfig = Storage::loadConfiguration();
 
     // Sensors
     auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
@@ -45,6 +49,10 @@ float Control::getSmoothedPressure() {
     return pressureSensor->getSmoothedValue();
 }
 
+Configuration Control::getActiveConfiguration() {
+    return activeConfig;
+}
+
 // Mutators
 void Control::setTemperatureTarget(float newTarget) {
     temperatureController->setControlTarget(
@@ -62,6 +70,16 @@ void Control::setFlowTarget(float newTarget) {
     // flowController->setControlTarget(newTarget);
 }
 
+void Control::setBrewTemperature(float newTarget) {
+    activeConfig.temps.brew = newTarget;
+    Storage::storeBrewTemperature(newTarget);
+}
+
+void Control::setSteamTemperature(float newTarget) {
+    activeConfig.temps.steam = newTarget;
+    Storage::storeSteamTemperature(newTarget);
+}
+
 void Control::openSolenoid() {
     solenoidValve->setState((uint8_t) SolenoidState::OPEN);
 }
@@ -74,7 +92,6 @@ void Control::closeSolenoid() {
 void Control::update() {
 
     // Update sensors
-
     temperatureSensor->update();
     pressureSensor->update();
     // flowSensor->update();

@@ -8,9 +8,11 @@
 #include "include/routes/index.h"
 #include "include/routes/info.h"
 #include "include/routes/directControl.h"
+#include "include/routes/configuration.h"
 
 #include "include/io.h"
 #include "include/control.h"
+#include "include/storage.h"
 
 // Create Server 
 ESP8266WebServer* server = new ESP8266WebServer(80);
@@ -25,7 +27,6 @@ void setup() {
 
     // initialize input output module
     IO::init();
-
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -46,8 +47,9 @@ void setup() {
 
     // init routing
     IndexRouter::attach(server);
-    SensorRouter::attach(server, &timeClient);
+    InfoRouter::attach(server, &timeClient);
     DirectControlRouter::attach(server, &timeClient);
+    ConfigurationRouter::attach(server);
 
     // Start server
     server->begin();

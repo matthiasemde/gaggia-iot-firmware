@@ -4,25 +4,12 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-typedef struct _Temperatures {
-    float brew;
-    float steam;
-} Temperatures;
-
-typedef struct _Pressures {
-    float brew;
-    float preinfusion;
-} Pressures;
-
-typedef struct _Configuration {
-    Temperatures temps;
-    Pressures pressures;
-    uint16_t preinfusionTime;
-} Configuration;
-    
+#include "control.h"
 
 namespace Storage {
+    // Accessors
     Configuration loadConfiguration();
+    uint16_t loadCoffeeCount();
 
     // Mutators
     void storeBrewTemperature(float newTemp);
@@ -34,8 +21,7 @@ namespace Storage {
 
     void storeConfiguration(Configuration config);
     
-    uint16_t loadNumberOfCoffees();
-    void increaseNumberOfCoffees();
+    void storeCoffeeCount(uint16_t newCount);
 }
 
 #endif

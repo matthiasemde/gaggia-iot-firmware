@@ -5,7 +5,7 @@
 #include <NTPClient.h>
 #include <ArduinoJson.h>
 
-#include "../../include/control.h"
+#include "../control.h"
 
 namespace DirectControlRouter {
     void attach(ESP8266WebServer *server, NTPClient *timeClient);

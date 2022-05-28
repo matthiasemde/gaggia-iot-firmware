@@ -6,6 +6,7 @@
 #include <ArduinoJson.h>
 
 #include "../../include/control.h"
+#include "../../include/storage.h"
 
 namespace InfoRouter {
     void attach(ESP8266WebServer *server, NTPClient *timeClient);
