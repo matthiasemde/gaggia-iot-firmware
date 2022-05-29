@@ -9,7 +9,7 @@ void IO::init() {
 }
 
 void IO::sayHello() {
-    tone(PIEZO, 1000, 1000);
+    ledcWriteNote(PIEZO, NOTE_C, 4);
 }
 
 uint8_t IO::getButtonState() {

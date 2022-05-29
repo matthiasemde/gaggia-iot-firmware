@@ -1,6 +1,6 @@
 #include "../../include/routes/configuration.h"
 
-void ConfigurationRouter::attach(ESP8266WebServer* server) {
+void ConfigurationRouter::attach(WebServer* server) {
         server->on("/configuration", HTTP_GET, [server]() {
             DynamicJsonDocument res(1024);
             Configuration config = Control::getActiveConfiguration();

@@ -1,8 +1,8 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#include <WiFi.h>
+#include <WebServer.h>
 
 #include "include/credentials.h"
 #include "include/routes/index.h"
@@ -15,7 +15,7 @@
 #include "include/storage.h"
 
 // Create Server 
-ESP8266WebServer* server = new ESP8266WebServer(80);
+WebServer* server = new WebServer(80);
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");

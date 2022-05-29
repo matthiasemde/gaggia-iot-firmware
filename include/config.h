@@ -3,32 +3,31 @@
 
 #define MAX_TEMP_TARGET 140
 
-#define TEMP_CS_PIN D0
-#define SPI_DI_PIN D5
-#define SPI_DO_PIN D6
-#define SPI_CLK_PIN D7
+#define TEMP_CS_PIN GPIO_NUM_17
+#define SPI_DI_PIN GPIO_NUM_5
+#define SPI_DO_PIN GPIO_NUM_18
+#define SPI_CLK_PIN GPIO_NUM_19
 
 #define TEMP_RREF 430.0
 
-#define HEATER_BLOCK_PIN D1
 
 const float kp = 1.0;
 const float ki = 1.0;
 const float kd = 1.0;
 
-#define PIEZO D2
+#define PIEZO GPIO_NUM_21
 
-#define PUMP_BUTTON D3
-#define STEAM_BUTTON D4
+#define PUMP_BUTTON GPIO_NUM_36
+#define STEAM_BUTTON GPIO_NUM_39
 
-#define SOLENOID_VALVE_PIN D8
-#define HEATER_BLOCK_PIN D8
-#define PUMP_PIN D8
+#define SOLENOID_VALVE_PIN GPIO_NUM_26
+#define HEATER_BLOCK_PIN GPIO_NUM_23
+#define PUMP_PIN GPIO_NUM_22
 
 #define PMW_FREQUENCY 100
 #define PWM_RESOLUTION 1024
 
-#define PRESSURE_SENSOR_PIN A0
+#define PRESSURE_SENSOR_PIN GPIO_NUM_25
 
 #define PRESSURE_SENSOR_AT_1_BAR 170
 

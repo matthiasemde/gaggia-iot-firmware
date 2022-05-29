@@ -1,6 +1,6 @@
 #include "../../include/routes/info.h"
 
-void InfoRouter::attach(ESP8266WebServer* server, NTPClient* timeClient) {
+void InfoRouter::attach(WebServer* server, NTPClient* timeClient) {
     server->on("/info/coffeeCount", HTTP_GET, [server]() {
         DynamicJsonDocument res(32);
         res["coffeeCount"] = Storage::loadCoffeeCount();

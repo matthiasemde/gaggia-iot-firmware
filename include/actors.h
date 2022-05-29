@@ -22,6 +22,7 @@ public:
 
 class PwmActor {
 private:
+    uint8_t ledChannel;
     uint8_t controlPin;
     // float pwmLevel;
     uint16_t pwmResolution;

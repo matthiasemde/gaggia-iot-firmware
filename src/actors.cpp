@@ -23,16 +23,18 @@ void BinaryActor::setState(uint8_t newState) {
 }
 
 //// Class PwmActor ////
+uint8_t ledChannel = 0;
 
 // Constructor
 PwmActor::PwmActor(uint8_t controlPin, uint32_t pwmFrequency, int pwmResolution) {
+    this->ledChannel = ledChannel;
     this->controlPin = controlPin;
     this->pwmResolution = pwmResolution;
 
-    analogWrite(this->controlPin, 0);
-    analogWriteFreq(pwmFrequency);
-    analogWriteResolution(this->pwmResolution);
-    pinMode(this->controlPin, OUTPUT);
+    ledcSetup(this->ledChannel, pwmFrequency, this->pwmResolution);
+    ledcAttachPin(this->controlPin, this->ledChannel);
+
+    ledChannel++;
 }
 
 // Accessors
@@ -43,7 +45,7 @@ PwmActor::PwmActor(uint8_t controlPin, uint32_t pwmFrequency, int pwmResolution)
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
     // convert from float (0.0 - 1.0) to int (0 - pwmResolution)
-    analogWrite(
+    ledcWrite(
         this->controlPin,
         (int) round(constrain(newPowerLevel, 0.0, 1.0) * (this->pwmResolution-1))
     );
