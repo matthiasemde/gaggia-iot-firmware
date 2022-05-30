@@ -3,9 +3,11 @@
 #include "../include/storage.h"
 
 namespace {
+    bool initialized = false;
+
     auto controlMode = PumpControlMode::PRESSURE;
 
-    Configuration activeConfig = Storage::loadConfiguration();
+    Configuration activeConfig;
 
     // Sensors
     auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
@@ -31,6 +33,14 @@ namespace {
     auto pump = new PwmActor(PUMP_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
 }
 
+
+void Control::init() {
+    if (!initialized) {
+        activeConfig = Storage::loadConfiguration();
+        setTemperatureTarget(activeConfig.temps.brew);
+        initialized = true;
+    }
+}
 
 // Accessors
 float Control::getRawTemperature() {
@@ -70,14 +80,24 @@ void Control::setFlowTarget(float newTarget) {
     // flowController->setControlTarget(newTarget);
 }
 
-void Control::setBrewTemperature(float newTarget) {
-    activeConfig.temps.brew = newTarget;
-    Storage::storeBrewTemperature(newTarget);
+void Control::setBrewTemperature(float newValue) {
+    activeConfig.temps.brew = newValue;
+    Storage::storeBrewTemperature(newValue);
 }
 
-void Control::setSteamTemperature(float newTarget) {
-    activeConfig.temps.steam = newTarget;
-    Storage::storeSteamTemperature(newTarget);
+void Control::setSteamTemperature(float newValue) {
+    activeConfig.temps.steam = newValue;
+    Storage::storeSteamTemperature(newValue);
+}
+
+void Control::setBrewPressure(float newValue) {
+    activeConfig.pressures.brew = newValue;
+    Storage::storeBrewPressure(newValue);
+}
+
+void Control::setPreinfusionPressure(float newValue) {
+    activeConfig.pressures.preinfusion = newValue;
+    Storage::storePreinfusionPressure(newValue);
 }
 
 void Control::openSolenoid() {

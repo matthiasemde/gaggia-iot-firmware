@@ -3,7 +3,7 @@
 namespace DirectControlRouter {
     void attach(WebServer* server, NTPClient* timeClient) {
         
-        server->on("/direct-control/", HTTP_POST, [server]() {
+        server->on("/direct-control", HTTP_POST, [server]() {
             uint16_t responseCode = 400; // bad request
             for (uint8_t i = 0; i < server->args(); i++) { 
                 if (server->argName(i) == "temperature") {

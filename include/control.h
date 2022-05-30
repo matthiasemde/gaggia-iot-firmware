@@ -32,6 +32,8 @@ enum class PumpControlMode {
 };
 
 namespace Control {
+    void init();
+
     // Accessors
     float getRawTemperature();
     float getSmoothedTemperature();
@@ -46,8 +48,11 @@ namespace Control {
     void setPressureTarget(float newTarget);
     void setFlowTarget(float newTarget);
 
-    void setBrewTemperature(float newTarget);
-    void setSteamTemperature(float newTarget);
+    void setBrewTemperature(float newValue);
+    void setSteamTemperature(float newValue);
+
+    void setBrewPressure(float newValue);
+    void setPreinfusionPressure(float newValue);
 
     void openSolenoid();
     void closeSolenoid();

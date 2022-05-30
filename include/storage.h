@@ -2,11 +2,13 @@
 #define __STORAGE_H__
 
 #include <Arduino.h>
-#include <EEPROM.h>
+#include <Preferences.h>
 
 #include "control.h"
 
 namespace Storage {
+    void init();
+
     // Accessors
     Configuration loadConfiguration();
     uint16_t loadCoffeeCount();

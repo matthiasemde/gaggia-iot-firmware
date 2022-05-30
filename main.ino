@@ -11,11 +11,11 @@
 #include "include/routes/configuration.h"
 
 #include "include/io.h"
-#include "include/control.h"
 #include "include/storage.h"
+#include "include/control.h"
 
 // Create Server 
-WebServer* server = new WebServer(80);
+auto server = new WebServer(80);
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
@@ -26,6 +26,8 @@ void setup() {
     Serial.begin(115200);
 
     // initialize input output module
+    Storage::init();
+    Control::init();
     IO::init();
 
     WiFi.mode(WIFI_STA);

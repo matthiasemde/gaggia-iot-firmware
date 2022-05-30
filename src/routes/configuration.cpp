@@ -35,4 +35,18 @@ void ConfigurationRouter::attach(WebServer* server) {
             }
             server->send(responseCode);
         });
+
+        server->on("/configuration/pressure", HTTP_POST, [server]() {
+            uint16_t responseCode = 400; // bad request
+            for (uint8_t i = 0; i < server->args(); i++) { 
+                if (server->argName(i) == "brew") {
+                    Control::setBrewPressure(server->arg(i).toFloat());
+                    responseCode = 202;
+                } else if (server->argName(i) == "preinfusion") {
+                    Control::setPreinfusionPressure(server->arg(i).toFloat());
+                    responseCode = 202;
+                }
+            }
+            server->send(responseCode);
+        });
     }
