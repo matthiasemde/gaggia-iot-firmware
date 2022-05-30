@@ -100,6 +100,11 @@ void Control::setPreinfusionPressure(float newValue) {
     Storage::storePreinfusionPressure(newValue);
 }
 
+void Control::setPreinfusionTime(uint16_t newValue) {
+    activeConfig.preinfusionTime = newValue;
+    Storage::storePreinfusionTime(newValue);
+}
+
 void Control::openSolenoid() {
     solenoidValve->setState((uint8_t) SolenoidState::OPEN);
 }

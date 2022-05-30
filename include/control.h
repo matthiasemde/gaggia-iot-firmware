@@ -54,6 +54,8 @@ namespace Control {
     void setBrewPressure(float newValue);
     void setPreinfusionPressure(float newValue);
 
+    void setPreinfusionTime(uint16_t newValue);
+
     void openSolenoid();
     void closeSolenoid();
 
