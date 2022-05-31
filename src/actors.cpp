@@ -7,46 +7,57 @@ BinaryActor::BinaryActor(uint8_t controlPin, uint8_t initialState) {
     this->controlPin = controlPin;
     this->state = initialState;
 
-    digitalWrite(this->controlPin, initialState);
-    pinMode(this->controlPin, OUTPUT);
+    digitalWrite(controlPin, initialState);
+    pinMode(controlPin, OUTPUT);
 }
 
 // Accessors
 uint8_t BinaryActor::getState() {
-    return this->state;
+    return state;
 }
 
 // Mutators
 void BinaryActor::setState(uint8_t newState) {
-    this->state = newState;
-    digitalWrite(this->controlPin, newState);
+    state = newState;
+    digitalWrite(controlPin, newState);
 }
 
 //// Class PwmActor ////
-uint8_t ledChannel = 0;
 
 // Constructor
-PwmActor::PwmActor(uint8_t controlPin, uint32_t pwmFrequency, int pwmResolution) {
-    this->ledChannel = ledChannel;
+PwmActor::PwmActor(uint8_t controlPin, uint8_t pwmChannel ,double pwmFrequency, uint8_t pwmResolution) {
     this->controlPin = controlPin;
-    this->pwmResolution = pwmResolution;
+    this->pwmChannel = pwmChannel;
+    this->maxDutyCycle = pow(2, pwmResolution) - 1;
 
-    ledcSetup(this->ledChannel, pwmFrequency, this->pwmResolution);
-    ledcAttachPin(this->controlPin, this->ledChannel);
+    digitalWrite(controlPin, LOW);
 
-    ledChannel++;
+    ledcSetup(pwmChannel, pwmFrequency, pwmResolution);
 }
 
 // Accessors
-// float PwmActor::getPowerLevel() {
-//     return this->pwmLevel
-// }
 
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
-    // convert from float (0.0 - 1.0) to int (0 - pwmResolution)
-    ledcWrite(
-        this->controlPin,
-        (int) round(constrain(newPowerLevel, 0.0, 1.0) * (this->pwmResolution-1))
-    );
+    // convert from float (0.0 - 1.0) to int (0 - maxDutyCycle)
+    dutyCycle = (uint32_t) round(constrain(newPowerLevel, 0.0, 1.0) * maxDutyCycle);
+    ledcWrite(pwmChannel, dutyCycle);
+}
+
+void PwmActor::activate() {
+    if(!active) {
+        ledcAttachPin(controlPin, pwmChannel);
+        active = true;
+    }
+}
+
+void PwmActor::deactivate() {
+    if(active) {
+        ledcDetachPin(controlPin);
+        active = false;
+    }
+}
+
+String PwmActor::status() {
+    return "Duty cycle: " + String(dutyCycle) + " / " + String(maxDutyCycle) + "\n";
 }

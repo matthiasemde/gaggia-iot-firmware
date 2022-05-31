@@ -25,7 +25,7 @@ uint32_t lastStatusUpdate = 0;
 void setup() {
     Serial.begin(115200);
 
-    // initialize input output module
+    // initialize all modules
     Storage::init();
     Control::init();
     IO::init();

@@ -22,13 +22,17 @@ public:
 
 class PwmActor {
 private:
-    uint8_t ledChannel;
     uint8_t controlPin;
-    // float pwmLevel;
-    uint16_t pwmResolution;
+    uint8_t pwmChannel;
+    uint32_t dutyCycle;
+    uint16_t maxDutyCycle;
+    bool active = false;
 public:
-    PwmActor(uint8_t controlPin, uint32_t pwmFrequency, int pwmResolution);
+    PwmActor(uint8_t controlPin, uint8_t pwmChannel, double pwmFrequency, uint8_t pwmResolution);
     void setPowerLevel(float newPwmLevel);
+    void activate();
+    void deactivate();
+    String status();
 };
 
 #endif

@@ -9,21 +9,21 @@
 #include "actors.h"
 #include "pid.h"
 
-typedef struct _Temperatures {
-    float brew;
-    float steam;
-} Temperatures;
+typedef struct {
+    float brew, steam;
+} temperatures_t;
 
-typedef struct _Pressures {
-    float brew;
-    float preinfusion;
-} Pressures;
+typedef struct {
+    float brew, preinfusion;
+} pressures_t;
 
-typedef struct _Configuration {
-    Temperatures temps;
-    Pressures pressures;
+typedef struct {
+    temperatures_t temps;
+    pidCoefs_t temperaturePIDCoefs;
+    pressures_t pressures;
+    pidCoefs_t pressurePIDCoefs;
     uint16_t preinfusionTime;
-} Configuration;
+} configuration_t;
     
 
 enum class PumpControlMode {
@@ -41,7 +41,7 @@ namespace Control {
     float getRawPressure();
     float getSmoothedPressure();
 
-    Configuration getActiveConfiguration();
+    configuration_t getActiveConfiguration();
 
     // Mutators
     void setTemperatureTarget(float newTarget);
@@ -55,6 +55,9 @@ namespace Control {
     void setPreinfusionPressure(float newValue);
 
     void setPreinfusionTime(uint16_t newValue);
+
+    void setTemperaturePIDCoefs(pidCoefs_t newCoefs);
+    void setPressurePIDCoefs(pidCoefs_t newCoefs);
 
     void openSolenoid();
     void closeSolenoid();

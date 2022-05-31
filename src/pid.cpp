@@ -1,46 +1,51 @@
 #include "../include/pid.h"
 
-PID::PID(
-    float kp,
-    float ki,
-    float kd,
-    float controlTarget,
-    uint16_t period
-) {
-    this->kp = kp;
-    this->ki = ki;
-    this->kd = kd;
-
+PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
     this->controlTarget = controlTarget;
 
     this->period = period;
     this->dt = (float)period / 1000;
 
+    this->condIntegralMargin = condIntegralMargin;
+
     this->lastUpdate = millis();
 }
 
-void PID::setControlTarget(float newControlTarget) {
-    this->integral = 0;
-    this->controlTarget = newControlTarget;
+float PID::getControlValue() {
+    return controlValue;
 }
 
-bool PID::update(float input, float* nextControlValue) {
+void PID::setPIDCoefs(pidCoefs_t newCoefs) {
+    if (newCoefs.kp >= 0) kp = newCoefs.kp;
+    if (newCoefs.ki >= 0) ki = newCoefs.ki;
+    if (newCoefs.kd >= 0) kd = newCoefs.kd;
+}
+
+void PID::setControlTarget(float newControlTarget) {
+    controlTarget = newControlTarget;
+}
+
+bool PID::update(float input) {
     uint32_t now = millis();
-    if (this->lastUpdate + this->period > now) {
-        this->lastUpdate = now;
+    if (lastUpdate + period < now) {
+        lastUpdate = now;
         
-        float error = this->controlTarget - input;
+        float error = controlTarget - input;
 
-        this->integral += error * this->dt;
+        if(abs(error) < condIntegralMargin) {
+            integral += error * dt;
+        } else {
+            integral = 0;
+        }
         
-        float derivative = (error - this->lastError) * this->dt;
+        float derivative = (error - lastError) * dt;
 
-        *nextControlValue = 
-            this->kp * error + 
-            this->ki * this->integral +
-            this->kd * derivative;
+        controlValue = 
+            kp * error + 
+            ki * integral +
+            kd * derivative;
 
-        this->lastError = error;
+        lastError = error;
 
         return true;
     }
@@ -48,13 +53,15 @@ bool PID::update(float input, float* nextControlValue) {
 };
 
 void PID::reset() {
-    this->integral = 0;
-    this->lastError = 0;
+    integral = 0;
+    lastError = 0;
 }
 
 String PID::status() {
-    String status = "Control Target: ";
-    status += this->controlTarget;
-    status += "\n";
+    String status = "Control Target:\t " + String(controlTarget) +
+        "\nCoefficients:\t (p " + String(kp) + ", i " + String(ki) + ", d " + String(kd) + ")" +
+        "\nLast Error:\t\t " + String(lastError) +
+        "\nIntegral:\t\t " + String(integral) +
+        "\nControl Value:\t " + String(controlValue) + "\n";
     return status;
 }

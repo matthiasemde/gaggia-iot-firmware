@@ -10,7 +10,7 @@ namespace Storage {
     void init();
 
     // Accessors
-    Configuration loadConfiguration();
+    configuration_t loadConfiguration();
     uint16_t loadCoffeeCount();
 
     // Mutators
@@ -21,7 +21,10 @@ namespace Storage {
     void storePreinfusionPressure(float newPressure);
     void storePreinfusionTime(uint16_t newTime);
 
-    void storeConfiguration(Configuration config);
+    void storeTemperaturePIDCoefs(pidCoefs_t newCoefs);
+    void storePressurePIDCoefs(pidCoefs_t newCoefs);
+
+    void storeConfiguration(configuration_t config);
     
     void storeCoffeeCount(uint16_t newCount);
 }

@@ -10,12 +10,12 @@ class Sensor {
 private:
     float rawValue;
     float smoothedValue;
-    float smoothingCoefficient;
+    float smoothingCoefsficient;
 public:
     String displayName;
     
     // Constructor
-    Sensor(String name, float smoothingCoefficient);
+    Sensor(String name, float smoothingCoefsficient);
 
     // Accessors
     float getRawValue();
@@ -35,7 +35,7 @@ private:
     Adafruit_MAX31865* maxBoard;
     float rRef;
 public:
-    TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient);
+    TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefsficient);
     void update();
     String status();
 };
@@ -44,7 +44,7 @@ class PressureSensor : public Sensor {
 private:
     uint8_t inputPin;
 public:
-    PressureSensor(uint8_t inputPin, float smoothingCoefficient);
+    PressureSensor(uint8_t inputPin, float smoothingCoefsficient);
     void update();
     String status();
 };

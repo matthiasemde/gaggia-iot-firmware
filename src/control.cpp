@@ -7,19 +7,19 @@ namespace {
 
     auto controlMode = PumpControlMode::PRESSURE;
 
-    Configuration activeConfig;
+    configuration_t activeConfig;
 
     // Sensors
-    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
-    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient);
+    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefsficient);
+    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefsficient);
     Sensor* sensors[2] = {
         (Sensor*)temperatureSensor,
         (Sensor*)pressureSensor
     };
 
     // Controllers
-    auto temperatureController = new PID(kp, ki, kd, 0, 100);
-    auto pressureController = new PID(kp, ki, kd, 0, 100);
+    auto temperatureController = new PID(-1.0, 100, 5.0f);
+    auto pressureController = new PID(-1.0, 100, 0.5f);
     // auto flowController = new PID(kp, ki, kd, 0, 100);
     PID* controllers[2] = {
         temperatureController,
@@ -29,15 +29,27 @@ namespace {
     // Actors
     auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED);
 
-    auto heaterBlock = new PwmActor(HEATER_BLOCK_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
-    auto pump = new PwmActor(PUMP_PIN, PMW_FREQUENCY, PWM_RESOLUTION);
+    auto heaterBlock = new PwmActor(
+        HEATER_BLOCK_PIN,
+        HEATER_BLOCK_PWM_CHANNEL,
+        HEATER_BLOCK_PWM_FREQUENCY,
+        HEATER_BLOCK_PWM_RESOLUTION
+    );
+
+    auto pump = new PwmActor(
+        PUMP_PIN,
+        PUMP_PWM_CHANNEL,
+        PUMP_PWM_FREQUENCY,
+        PUMP_PWM_RESOLUTION
+    );
 }
 
 
 void Control::init() {
     if (!initialized) {
         activeConfig = Storage::loadConfiguration();
-        setTemperatureTarget(activeConfig.temps.brew);
+        temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
+        pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
         initialized = true;
     }
 }
@@ -59,18 +71,28 @@ float Control::getSmoothedPressure() {
     return pressureSensor->getSmoothedValue();
 }
 
-Configuration Control::getActiveConfiguration() {
+configuration_t Control::getActiveConfiguration() {
     return activeConfig;
 }
 
 // Mutators
 void Control::setTemperatureTarget(float newTarget) {
+    if(newTarget > 0) {
+        heaterBlock->activate();
+    } else {
+        heaterBlock->deactivate();
+    }
     temperatureController->setControlTarget(
         constrain(newTarget, 20, MAX_TEMP_TARGET)
     );
 }
 
 void Control::setPressureTarget(float newTarget) {
+    if(newTarget > 0) {
+        pump->activate();
+    } else {
+        pump->deactivate();
+    }
     controlMode = PumpControlMode::PRESSURE;
     pressureController->setControlTarget(newTarget);
 }
@@ -105,6 +127,18 @@ void Control::setPreinfusionTime(uint16_t newValue) {
     Storage::storePreinfusionTime(newValue);
 }
 
+void Control::setTemperaturePIDCoefs(pidCoefs_t newCoefs) {
+    activeConfig.temperaturePIDCoefs = newCoefs;
+    temperatureController->setPIDCoefs(newCoefs);
+    Storage::storeTemperaturePIDCoefs(newCoefs);
+}
+
+void Control::setPressurePIDCoefs(pidCoefs_t newCoefs) {
+    activeConfig.pressurePIDCoefs = newCoefs;
+    pressureController->setPIDCoefs(newCoefs);
+    Storage::storePressurePIDCoefs(newCoefs);
+}
+
 void Control::openSolenoid() {
     solenoidValve->setState((uint8_t) SolenoidState::OPEN);
 }
@@ -123,13 +157,12 @@ void Control::update() {
 
 
     // Update controllers
-    float nextControlValue;
-    if (temperatureController->update(temperatureSensor->getSmoothedValue(), &nextControlValue)) {
-        heaterBlock->setPowerLevel(nextControlValue);
+    if (temperatureController->update(temperatureSensor->getSmoothedValue())) {
+        heaterBlock->setPowerLevel(temperatureController->getControlValue());
     }
     if (controlMode == PumpControlMode::PRESSURE) {
-        if (pressureController->update(pressureSensor->getSmoothedValue(), &nextControlValue)) {
-            pump->setPowerLevel(nextControlValue);
+        if (pressureController->update(pressureSensor->getSmoothedValue())) {
+            pump->setPowerLevel(pressureController->getControlValue());
         }
     } else if (controlMode == PumpControlMode::FLOW) {
         // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
@@ -144,11 +177,15 @@ String Control::status() {
     status += temperatureSensor->status();
     status += "\nTemperature controller:\n";
     status += temperatureController->status();
+    status += "\nHeater Block:\n";
+    status += heaterBlock->status();
 
     status += "\nPressure sensor:\n";
     status += pressureSensor->status();
     status += "\nPressure controller:\n";
     status += pressureController->status();
+    status += "\nPump:\n";
+    status += pump->status();
 
     // status += "\n\nFlow sensor:\n";
     // status += flowSensor->status();

@@ -16,6 +16,7 @@ const float ki = 1.0;
 const float kd = 1.0;
 
 #define PIEZO GPIO_NUM_21
+#define PIEZO_CHANNEL 15
 
 #define PUMP_BUTTON GPIO_NUM_36
 #define STEAM_BUTTON GPIO_NUM_39
@@ -24,13 +25,18 @@ const float kd = 1.0;
 #define HEATER_BLOCK_PIN GPIO_NUM_27
 #define PUMP_PIN GPIO_NUM_22
 
-#define PMW_FREQUENCY 100
-#define PWM_RESOLUTION 1024
+#define HEATER_BLOCK_PWM_CHANNEL 0
+#define HEATER_BLOCK_PWM_FREQUENCY 10
+#define HEATER_BLOCK_PWM_RESOLUTION 10  // in bits
+
+#define PUMP_PWM_CHANNEL 1
+#define PUMP_PWM_FREQUENCY 1
+#define PUMP_PWM_RESOLUTION 10 // in bits
 
 #define PRESSURE_SENSOR_PIN GPIO_NUM_34
 
 #define PRESSURE_SENSOR_AT_1_BAR 170
 
-const float smoothingCoefficient = 0.5;
+const float smoothingCoefsficient = 0.5;
 
 #endif
