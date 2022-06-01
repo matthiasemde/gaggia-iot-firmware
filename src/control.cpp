@@ -32,15 +32,13 @@ namespace {
     auto heaterBlock = new PwmActor(
         HEATER_BLOCK_PIN,
         HEATER_BLOCK_PWM_CHANNEL,
-        HEATER_BLOCK_PWM_FREQUENCY,
-        HEATER_BLOCK_PWM_RESOLUTION
+        HEATER_BLOCK_PWM_FREQUENCY
     );
 
     auto pump = new PwmActor(
         PUMP_PIN,
         PUMP_PWM_CHANNEL,
-        PUMP_PWM_FREQUENCY,
-        PUMP_PWM_RESOLUTION
+        PUMP_PWM_FREQUENCY
     );
 }
 

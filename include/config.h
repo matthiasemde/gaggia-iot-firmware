@@ -26,12 +26,10 @@ const float kd = 1.0;
 #define PUMP_PIN GPIO_NUM_22
 
 #define HEATER_BLOCK_PWM_CHANNEL 0
-#define HEATER_BLOCK_PWM_FREQUENCY 10
-#define HEATER_BLOCK_PWM_RESOLUTION 10  // in bits
+#define HEATER_BLOCK_PWM_FREQUENCY 1
 
-#define PUMP_PWM_CHANNEL 1
-#define PUMP_PWM_FREQUENCY 1
-#define PUMP_PWM_RESOLUTION 10 // in bits
+#define PUMP_PWM_CHANNEL 2
+#define PUMP_PWM_FREQUENCY 1000 // Kemo M150 Pulse Converter requires 1-10 kHz
 
 #define PRESSURE_SENSOR_PIN GPIO_NUM_34
 

@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+#include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_reg.h"
+#include "driver/mcpwm.h"
 #include "config.h"
 
 enum class SolenoidState {
@@ -22,13 +25,15 @@ public:
 
 class PwmActor {
 private:
-    uint8_t controlPin;
-    uint8_t pwmChannel;
+    gpio_num_t controlPin;
+    mcpwm_dev_t* pwmDevice;
+    uint8_t prescale;
+    mcpwm_timer_t pwmTimer;
     uint32_t dutyCycle;
     uint16_t maxDutyCycle;
     bool active = false;
 public:
-    PwmActor(uint8_t controlPin, uint8_t pwmChannel, double pwmFrequency, uint8_t pwmResolution);
+    PwmActor(gpio_num_t controlPin, uint8_t pwmChannel, double pwmFrequency);
     void setPowerLevel(float newPwmLevel);
     void activate();
     void deactivate();
