@@ -3,11 +3,12 @@
 
 #include <Arduino.h>
 
-#include "config.h"
-
 #include "sensors.h"
 #include "actors.h"
 #include "pid.h"
+
+#include "../../config.h"
+
 
 typedef struct {
     float brew, steam;

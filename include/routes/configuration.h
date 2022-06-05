@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 #include <WebServer.h>
 
-#include "../storage.h"
-#include "../control.h"
+#include "../modules/storage.h"
+#include "../modules/control/control.h"
 
 namespace ConfigurationRouter {
     void attach(WebServer* server);

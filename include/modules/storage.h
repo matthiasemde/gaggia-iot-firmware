@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
-#include "control.h"
+#include "control/control.h"
 
 namespace Storage {
     void init();

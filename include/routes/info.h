@@ -5,8 +5,8 @@
 #include <NTPClient.h>
 #include <ArduinoJson.h>
 
-#include "../../include/control.h"
-#include "../../include/storage.h"
+#include "../modules/io.h"
+#include "../modules/storage.h"
 
 namespace InfoRouter {
     void attach(WebServer *server, NTPClient *timeClient);

@@ -12,14 +12,10 @@ void ConfigurationRouter::attach(WebServer* server) {
         res["pressures"]["preinfusion"] = config.pressures.preinfusion;
         res["preinfusionTime"] = config.preinfusionTime;
 
-        uint8_t resLength = measureJsonPretty(res);
-        char *buf = (char*) malloc(resLength * sizeof(char));
-        
-        serializeJsonPretty(res, buf, resLength);
+        String response;
+        serializeJson(res, response);
 
-        server->send(200, "application/json", (const char *)buf);
-
-        free(buf);
+        server->send(200, "application/json", response);
     });
 
     server->on("/configuration/temperature", HTTP_POST, [server]() {

@@ -6,7 +6,7 @@
 #include "soc/mcpwm_struct.h"
 #include "soc/mcpwm_reg.h"
 #include "driver/mcpwm.h"
-#include "config.h"
+#include "../../config.h"
 
 enum class SolenoidState {
     OPEN = HIGH,

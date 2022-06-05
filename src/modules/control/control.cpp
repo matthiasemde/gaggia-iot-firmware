@@ -1,6 +1,5 @@
-#include "../include/control.h"
-
-#include "../include/storage.h"
+#include "../../../include/modules/control/control.h"
+#include "../../../include/modules/storage.h"
 
 namespace {
     bool initialized = false;

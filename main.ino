@@ -10,9 +10,10 @@
 #include "include/routes/directControl.h"
 #include "include/routes/configuration.h"
 
-#include "include/io.h"
-#include "include/storage.h"
-#include "include/control.h"
+#include "include/modules/io.h"
+#include "include/modules/storage.h"
+#include "include/modules/control/control.h"
+#include "include/modules/fsm.h"
 
 // Create Server 
 auto server = new WebServer(80);
@@ -29,16 +30,18 @@ void setup() {
     Storage::init();
     Control::init();
     IO::init();
+    FSM::init();
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     Serial.println("");
 
-    // Wait for connection
+    // wait for connection
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
+
     Serial.print("\nConnected to ");
     Serial.println(ssid);
     Serial.print("IP address: ");
@@ -47,13 +50,13 @@ void setup() {
     // start NTP client
     timeClient.begin();
 
-    // init routing
+    // initialize api
     IndexRouter::attach(server);
     InfoRouter::attach(server, &timeClient);
     DirectControlRouter::attach(server, &timeClient);
     ConfigurationRouter::attach(server);
 
-    // Start server
+    // start server
     server->begin();
     Serial.println("HTTP server started");
 }
@@ -63,12 +66,17 @@ void loop(void) {
     server->handleClient();
     timeClient.update();
 
-    Control::update();
+    state_t gaggiaState = FSM::update();
+
+    if(gaggiaState != UNINITIALIZED) {
+        Control::update();
+    }
 
     // Status update
-    if (lastStatusUpdate + 5000 < millis()) {
+    if (lastStatusUpdate + 3000 < millis()) {
         lastStatusUpdate = millis();
         Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
+        Serial.println("\n///////// FSM status /////////\n" + FSM::status());
         Serial.println("\n///////// Control status /////////\n" + Control::status());
         Serial.println("\n/////////    IO status   /////////\n" + IO::status());
     }

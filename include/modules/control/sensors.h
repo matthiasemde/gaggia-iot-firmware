@@ -1,9 +1,9 @@
 #ifndef __SENSORS_H__
 #define __SENSORS_H__
 
-#include "config.h"
 #include <Adafruit_MAX31865.h>
 
+#include "../../config.h"
 #include "pid.h" 
 
 class Sensor {

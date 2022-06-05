@@ -5,7 +5,7 @@
 #include <NTPClient.h>
 #include <ArduinoJson.h>
 
-#include "../control.h"
+#include "../modules/control/control.h"
 
 namespace DirectControlRouter {
     void attach(WebServer *server, NTPClient *timeClient);
