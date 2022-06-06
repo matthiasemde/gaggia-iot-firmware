@@ -2,13 +2,29 @@
 
 namespace {
     state_t state = UNINITIALIZED;
-    uint32_t brewTimer;
+    uint32_t brewTimerStart;
+    uint32_t brewTimerStop;
 
     void goIdle() {
         IO::clearPowerButton();
-        Control::setTemperatureTarget(0.0);
         Control::setPressureTarget(0.0);
+        Control::closeSolenoid();
+        Control::setTemperatureTarget(0.0);
         state = IDLE;
+    }
+
+    void enterHeating() {
+        Control::setPressureTarget(0.0);
+        Control::closeSolenoid();
+        Control::setTemperatureTarget(Control::getActiveConfiguration().temps.brew);
+        state = HEATING;
+    }
+
+    void enterSteaming() {
+        Control::setPressureTarget(0.0);
+        Control::closeSolenoid();
+        Control::setTemperatureTarget(Control::getActiveConfiguration().temps.steam);
+        state = STEAMING;
     }
 }
 
@@ -30,8 +46,7 @@ state_t FSM::update() {
         case IDLE:
             if (buttonState.power) {
                 IO::clearPowerButton();
-                Control::setTemperatureTarget(Control::getActiveConfiguration().temps.brew);
-                state = HEATING;
+                enterHeating();
             }
             break;
 
@@ -40,30 +55,36 @@ state_t FSM::update() {
             if (buttonState.power) goIdle();
             else if(buttonState.pump) {
                 Control::setPressureTarget(Control::getActiveConfiguration().pressures.preinfusion);
-                brewTimer = millis();
+                Control::openSolenoid();
+                brewTimerStart = millis();
                 state = PREINFUSION;
+            } else if(buttonState.steam) {
+                enterSteaming();
             }
             break;
 
-        //////////////     PREINFUSION  ///////////////
+        //////////////    PREINFUSION   ///////////////
         case PREINFUSION:
             if (buttonState.power) goIdle();
-            else if (!buttonState.pump) {
-                Control::setPressureTarget(0.0);
-                state = HEATING;
-            } else if ((millis() - brewTimer) > Control::getActiveConfiguration().preinfusionTime * 1000) {
+            else if (!buttonState.pump) enterHeating();
+            else if ((millis() - brewTimerStart) > Control::getActiveConfiguration().preinfusionTime * 1000) {
                 Control::setPressureTarget(Control::getActiveConfiguration().pressures.brew);
                 state = BREWING;
             }
             break;
 
-        //////////////      HEATING     ///////////////
+        //////////////      BREWING     ///////////////
         case BREWING:
+            brewTimerStop = millis();
             if (buttonState.power) goIdle();
-            else if (!buttonState.pump) {
-                Control::setPressureTarget(0.0);
-                state = HEATING;
-            }
+            else if (!buttonState.pump) enterHeating();
+            break;
+
+        //////////////      STEAMING    ///////////////
+        case STEAMING:
+            if (buttonState.power) goIdle();
+            else if (!buttonState.steam) enterHeating();
+            else if (buttonState.pump) // TODO: figure out what to do here ¯\_(ツ)_/¯
             break;
     }
     return state;
@@ -81,11 +102,14 @@ String FSM::status() {
         case HEATING:
             status = "HEATING\n";
             break;
+        case STEAMING:
+            status = "STEAMING\n";
+            break;
         case PREINFUSION:
-            status = "PREINFUSION\nBrew timer: " + (String) (round(millis() - brewTimer)) + "s\n";
+            status = "PREINFUSION\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s\n";
             break;
         case BREWING:
-            status = "BREWING\nBrew timer: " + (String) (round(millis() - brewTimer)) + "s\n";
+            status = "BREWING\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s\n";
             break;
     }
     return status;

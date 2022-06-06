@@ -10,6 +10,7 @@ typedef enum {
     UNINITIALIZED,
     IDLE,
     HEATING,
+    STEAMING,
     PREINFUSION,
     BREWING,
 } state_t;
