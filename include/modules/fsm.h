@@ -10,6 +10,7 @@ typedef enum {
     UNINITIALIZED,
     IDLE,
     HEATING,
+    // AT_BREW_TEMPERATURE,
     STEAMING,
     PREINFUSION,
     BREWING,

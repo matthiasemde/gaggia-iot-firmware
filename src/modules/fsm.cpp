@@ -58,9 +58,7 @@ state_t FSM::update() {
                 Control::openSolenoid();
                 brewTimerStart = millis();
                 state = PREINFUSION;
-            } else if(buttonState.steam) {
-                enterSteaming();
-            }
+            } else if(buttonState.steam) enterSteaming();
             break;
 
         //////////////    PREINFUSION   ///////////////

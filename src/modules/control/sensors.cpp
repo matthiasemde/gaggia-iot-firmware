@@ -13,21 +13,21 @@ Sensor::Sensor(String name, float smoothingCoefsficient) {
 
 // Accessors
 float Sensor::getRawValue() {
-    return this->rawValue;
+    return rawValue;
 }
 
 float Sensor::getSmoothedValue() {
-    return this->smoothedValue;
+    return smoothedValue;
 }
 
 // Mutators
 void Sensor::setRawValue(float newValue) {
-    this->rawValue = newValue;
+    rawValue = newValue;
 
     // implement running average
-    this->smoothedValue =
-        this->smoothedValue * this->smoothingCoefsficient +
-        newValue * (1-this->smoothingCoefsficient);
+    smoothedValue =
+        smoothedValue * smoothingCoefsficient +
+        newValue * (1-smoothingCoefsficient);
 }
 
 
@@ -47,14 +47,14 @@ TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingC
 }
 
 void TemperatureSensor::update() {
-    this->setRawValue(this->maxBoard->temperature(100, this->rRef));
+    setRawValue(maxBoard->temperature(100, rRef));
     // Serial.println(this->maxBoard->temperature(100, this->rRef));
 }
 
 String TemperatureSensor::status() {
     String status = "";
     // Check and print any faults
-    uint8_t fault = this->maxBoard->readFault();
+    uint8_t fault = maxBoard->readFault();
     if (fault) {
         status = "Fault 0x";
         status += fault;
@@ -76,9 +76,9 @@ String TemperatureSensor::status() {
         if (fault & MAX31865_FAULT_OVUV) {
             status = "\nUnder/Over voltage\n"; 
         }
-        this->maxBoard->clearFault();
+        maxBoard->clearFault();
     }
-    status += "Smoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
+    status += "Smoothed value: " + String(getSmoothedValue()) + "\nRaw value: " + String(getRawValue()) + "\n";
 
     return status;
 }
@@ -90,13 +90,15 @@ String TemperatureSensor::status() {
 PressureSensor::PressureSensor(uint8_t inputPin, float smoothingCoefsficient)
 : Sensor("Pressure", smoothingCoefsficient) {
     this->inputPin = inputPin;
-    pinMode(this->inputPin, INPUT);
+    this->slope = PRESSURE_SENSOR_SLOPE;
+    this->offset = PRESSURE_SENSOR_OFFSET; 
+    pinMode(inputPin, INPUT);
 }
 
 void PressureSensor::update() {
-    this->setRawValue(analogRead(this->inputPin));
+    setRawValue(float(analogRead(inputPin)) * slope + offset);
 }
 
 String PressureSensor::status() {
-    return "Smoothed value: " + String(this->getSmoothedValue()) + "\nRaw value: " + String(this->getRawValue()) + "\n";
+    return "Smoothed value: " + String(getSmoothedValue()) + "\nRaw value: " + String(getRawValue()) + "\n";
 }

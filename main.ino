@@ -70,14 +70,14 @@ void loop(void) {
 
     if(gaggiaState != UNINITIALIZED) {
         Control::update();
-    }
 
-    // Status update
-    if (lastStatusUpdate + 3000 < millis()) {
-        lastStatusUpdate = millis();
-        Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
-        Serial.println("\n///////// FSM status /////////\n" + FSM::status());
-        Serial.println("\n///////// Control status /////////\n" + Control::status());
-        Serial.println("\n/////////    IO status   /////////\n" + IO::status());
+        // Status update
+        if (lastStatusUpdate + 3000 < millis()) {
+            lastStatusUpdate = millis();
+            Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
+            Serial.println("\n///////// FSM status /////////\n" + FSM::status());
+            Serial.println("\n///////// Control status /////////\n" + Control::status());
+            Serial.println("\n/////////    IO status   /////////\n" + IO::status());
+        }
     }
 }

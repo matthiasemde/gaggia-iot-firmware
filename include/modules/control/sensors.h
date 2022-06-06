@@ -43,6 +43,7 @@ public:
 class PressureSensor : public Sensor {
 private:
     uint8_t inputPin;
+    float offset, slope; // slope and offset to convert analogRead to pressure in Bar
 public:
     PressureSensor(uint8_t inputPin, float smoothingCoefsficient);
     void update();
