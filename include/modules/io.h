@@ -20,6 +20,10 @@ namespace IO {
     buttonState_t getButtonState();
     void clearPowerButton();
     String status();
+    void IO::turnOffLEDs();
+    void IO::setPowerButtonLED(bool newState);
+    void IO::setPumpButtonLED(bool newState);
+    void IO::setSteamButtonLED(bool newState);
 }
 
 #endif

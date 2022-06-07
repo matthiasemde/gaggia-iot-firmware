@@ -83,6 +83,13 @@ void IO::init() {
     attachInterrupt(POWER_BUTTON, powerButtonISR, RISING);
     attachInterrupt(PUMP_BUTTON, pumpButtonISR, CHANGE);
     attachInterrupt(STEAM_BUTTON, steamButtonISR, CHANGE);
+
+    digitalWrite(POWER_BUTTON_LED, LOW);
+    pinMode(POWER_BUTTON_LED, OUTPUT);
+    digitalWrite(PUMP_BUTTON_LED, LOW);
+    pinMode(PUMP_BUTTON_LED, OUTPUT);
+    digitalWrite(STEAM_BUTTON_LED, LOW);
+    pinMode(STEAM_BUTTON_LED, OUTPUT);
 }
 
 void IO::sayHello() {
@@ -97,9 +104,29 @@ buttonState_t IO::getButtonState() {
     return buttonState;
 }
 
+void IO::turnOffLEDs() {
+    digitalWrite(POWER_BUTTON_LED, LOW);
+    digitalWrite(PUMP_BUTTON_LED, LOW);
+    digitalWrite(STEAM_BUTTON_LED, LOW);
+}
+
+void IO::setPowerButtonLED(bool newState) {
+    digitalWrite(POWER_BUTTON_LED, newState);
+}
+
+void IO::setPumpButtonLED(bool newState) {
+    digitalWrite(PUMP_BUTTON_LED, newState);
+}
+
+void IO::setSteamButtonLED(bool newState) {
+    digitalWrite(STEAM_BUTTON_LED, newState);
+}
+
 String IO::status() {
     String status = "";
-    status += (String) "Button state:\nPump: " +
+    status += (String) "Button state:\nPower Flag: " +
+        ((buttonState.power) ? "set" : "clear") +
+        "\nPump: " +
         ((buttonState.pump) ? "on" : "off") +
         "\nSteam: " +
         ((buttonState.steam) ? "on" : "off");
