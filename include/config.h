@@ -10,7 +10,7 @@
 
 #define TEMP_RREF 430.0
 
-#define PIEZO GPIO_NUM_21
+#define PIEZO GPIO_NUM_22
 #define PIEZO_CHANNEL 15
 
 #define POWER_BUTTON GPIO_NUM_14
