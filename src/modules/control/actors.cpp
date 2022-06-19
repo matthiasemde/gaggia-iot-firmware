@@ -3,11 +3,11 @@
 //// Class BinaryActor ////
 
 // Constructor
-BinaryActor::BinaryActor(uint8_t controlPin, uint8_t initialState) {
+BinaryActor::BinaryActor(gpio_num_t controlPin, uint8_t initialState, bool inverted) {
     this->controlPin = controlPin;
-    this->state = initialState;
+    this->inverted = inverted;
 
-    digitalWrite(controlPin, initialState);
+    setState(initialState);
     pinMode(controlPin, OUTPUT);
 }
 
@@ -19,15 +19,24 @@ uint8_t BinaryActor::getState() {
 // Mutators
 void BinaryActor::setState(uint8_t newState) {
     state = newState;
-    digitalWrite(controlPin, newState);
+    digitalWrite(controlPin, (newState && !inverted) || (!newState && inverted));
 }
 
 //// Class PwmActor ////
 double tempScale;
 
 // Constructor
-PwmActor::PwmActor(gpio_num_t controlPin, uint8_t pwmChannel ,double pwmFrequency) {
+PwmActor::PwmActor(
+    gpio_num_t controlPin,
+    uint8_t pwmChannel,
+    double pwmFrequency,
+    float minOut,
+    float maxOut,
+    bool inverted
+) {
     this->controlPin = controlPin;
+    this->minOut = minOut;
+    this->maxOut = maxOut;
 
     mcpwm_unit_t pwmUnit;
 
@@ -61,8 +70,8 @@ PwmActor::PwmActor(gpio_num_t controlPin, uint8_t pwmChannel ,double pwmFrequenc
     pwmDevice->clk_cfg.prescale = prescale;                     // Set the 160MHz clock prescaler to 399 (160MHz/(199+1)=1600kHz)
     pwmDevice->timer[pwmTimer].period.prescale = prescale;      // Set timer 0 prescaler to 399 (800kHz/(199+1))=16kHz)
     pwmDevice->timer[pwmTimer].period.period = maxDutyCycle;        // Set the period to the max duty cycle     
-    pwmDevice->channel[pwmTimer].generator[MCPWM_OPR_A].utez = 2;   // Set the PWM0A ouput to go high at the start of the timer period
-    pwmDevice->channel[pwmTimer].generator[MCPWM_OPR_A].utea = 1;   // Clear on compare match
+    pwmDevice->channel[pwmTimer].generator[MCPWM_OPR_A].utez = inverted ? 1 : 2;   // (1 = low 2 = high) at start of the timer period
+    pwmDevice->channel[pwmTimer].generator[MCPWM_OPR_A].utea = inverted ? 2 : 1;   // (1 = low 2 = high) on compare match
     pwmDevice->timer[pwmTimer].mode.mode = MCPWM_UP_COUNTER;        // Set timer 0 to increment
     pwmDevice->timer[pwmTimer].mode.start = 2;                      // Set timer 0 to free-run
 
@@ -74,7 +83,7 @@ PwmActor::PwmActor(gpio_num_t controlPin, uint8_t pwmChannel ,double pwmFrequenc
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
     // convert from float (0.0 - 1.0) to int (0 - maxDutyCycle)
-    dutyCycle = (uint16_t) round(constrain(newPowerLevel, 0.0, 1.0) * maxDutyCycle);
+    dutyCycle = (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle);
     pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = dutyCycle;
 }
 

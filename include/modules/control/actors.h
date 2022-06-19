@@ -16,9 +16,10 @@ enum class SolenoidState {
 class BinaryActor {
 private:
     uint8_t state;
-    uint8_t controlPin;
+    gpio_num_t controlPin;
+    bool inverted;
 public:
-    BinaryActor(uint8_t controlPin, uint8_t initialState);
+    BinaryActor(gpio_num_t controlPin, uint8_t initialState, bool inverted = false);
     uint8_t getState();
     void setState(uint8_t newState);
 };
@@ -32,8 +33,16 @@ private:
     uint32_t dutyCycle;
     uint16_t maxDutyCycle;
     bool active = false;
+    float minOut, maxOut;
 public:
-    PwmActor(gpio_num_t controlPin, uint8_t pwmChannel, double pwmFrequency);
+    PwmActor(
+        gpio_num_t controlPin,
+        uint8_t pwmChannel,
+        double pwmFrequency,
+        float minOut = 0.0,
+        float maxOut = 1.0,
+        bool inverted = false
+    );
     void setPowerLevel(float newPwmLevel);
     void activate();
     void deactivate();

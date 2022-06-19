@@ -5,6 +5,9 @@
     "sketch": "main.ino",
     "output": "./build",
     "buildPreferences": [
-        ["build.extra_flags", "-DCORE_DEBUG_LEVEL=1 -DESP32"]
+        [
+            "build.extra_flags",
+            "-DCORE_DEBUG_LEVEL=1 -DESP32"
+        ]
     ]
 }

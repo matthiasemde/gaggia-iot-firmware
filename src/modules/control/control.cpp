@@ -26,7 +26,7 @@ namespace {
     };
 
     // Actors
-    auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED);
+    auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED, SOLENOID_INVERTED);
 
     auto heaterBlock = new PwmActor(
         HEATER_BLOCK_PIN,
@@ -37,7 +37,10 @@ namespace {
     auto pump = new PwmActor(
         PUMP_PIN,
         PUMP_PWM_CHANNEL,
-        PUMP_PWM_FREQUENCY
+        PUMP_PWM_FREQUENCY,
+        0.1f,
+        0.9f,
+        PUMP_INVERTED
     );
 }
 
