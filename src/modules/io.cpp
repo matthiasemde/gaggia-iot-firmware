@@ -67,6 +67,10 @@ namespace {
         buttonState.steam = !digitalRead(STEAM_BUTTON);
     }
 
+    auto powerButtonLED = new BinaryActor(POWER_BUTTON_LIGHT, (uint8_t) LightState::OFF);
+    auto pumpButtonLED = new BinaryActor(PUMP_BUTTON_LIGHT, (uint8_t) LightState::OFF);
+    auto steamButtonLED = new BinaryActor(STEAM_BUTTON_LIGHT, (uint8_t) LightState::OFF);
+
 }
 
 void IO::init() {
@@ -83,13 +87,6 @@ void IO::init() {
     attachInterrupt(POWER_BUTTON, powerButtonISR, RISING);
     attachInterrupt(PUMP_BUTTON, pumpButtonISR, CHANGE);
     attachInterrupt(STEAM_BUTTON, steamButtonISR, CHANGE);
-
-    digitalWrite(POWER_BUTTON_LED, LOW);
-    pinMode(POWER_BUTTON_LED, OUTPUT);
-    digitalWrite(PUMP_BUTTON_LED, LOW);
-    pinMode(PUMP_BUTTON_LED, OUTPUT);
-    digitalWrite(STEAM_BUTTON_LED, LOW);
-    pinMode(STEAM_BUTTON_LED, OUTPUT);
 }
 
 void IO::sayHello() {
@@ -104,22 +101,22 @@ buttonState_t IO::getButtonState() {
     return buttonState;
 }
 
-void IO::turnOffLEDs() {
-    digitalWrite(POWER_BUTTON_LED, LOW);
-    digitalWrite(PUMP_BUTTON_LED, LOW);
-    digitalWrite(STEAM_BUTTON_LED, LOW);
+void IO::turnOffLights() {
+    powerButtonLED->setState((uint8_t) LightState::OFF);
+    pumpButtonLED->setState((uint8_t) LightState::OFF);
+    steamButtonLED->setState((uint8_t) LightState::OFF);
 }
 
-void IO::setPowerButtonLED(bool newState) {
-    digitalWrite(POWER_BUTTON_LED, newState);
+void IO::setPowerButtonLight(LightState newState) {
+    powerButtonLED->setState((uint8_t) newState);
 }
 
-void IO::setPumpButtonLED(bool newState) {
-    digitalWrite(PUMP_BUTTON_LED, newState);
+void IO::setPumpButtonLight(LightState newState) {
+    pumpButtonLED->setState((uint8_t) newState);
 }
 
-void IO::setSteamButtonLED(bool newState) {
-    digitalWrite(STEAM_BUTTON_LED, newState);
+void IO::setSteamButtonLight(LightState newState) {
+    steamButtonLED->setState((uint8_t) newState);
 }
 
 String IO::status() {

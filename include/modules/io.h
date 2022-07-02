@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+#include "control/actors.h"
 #include "../config.h"
 
 typedef union {
@@ -14,16 +15,21 @@ typedef union {
     };
 } buttonState_t;
 
+enum class LightState {
+    ON,
+    OFF
+};
+
 namespace IO {
     void init();
     void sayHello();
     buttonState_t getButtonState();
     void clearPowerButton();
     String status();
-    void IO::turnOffLEDs();
-    void IO::setPowerButtonLED(bool newState);
-    void IO::setPumpButtonLED(bool newState);
-    void IO::setSteamButtonLED(bool newState);
+    void turnOffLights();
+    void setPowerButtonLight(LightState newState);
+    void setPumpButtonLight(LightState newState);
+    void setSteamButtonLight(LightState newState);
 }
 
 #endif

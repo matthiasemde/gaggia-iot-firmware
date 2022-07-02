@@ -8,11 +8,6 @@
 #include "driver/mcpwm.h"
 #include "../../config.h"
 
-enum class SolenoidState {
-    OPEN = HIGH,
-    CLOSED = LOW
-};
-
 class BinaryActor {
 private:
     uint8_t state;

@@ -7,7 +7,7 @@ namespace {
 
     void goIdle() {
         IO::clearPowerButton();
-        IO::turnOffLEDs();
+        IO::turnOffLights();
         Control::setPressureTarget(0.0);
         Control::closeSolenoid();
         Control::setTemperatureTarget(0.0);
@@ -15,8 +15,8 @@ namespace {
     }
 
     void enterHeating() {
-        IO::setPumpButtonLED(false);
-        IO::setSteamButtonLED(false);
+        IO::setPumpButtonLight(LightState::OFF);
+        IO::setSteamButtonLight(LightState::OFF);
         Control::setPressureTarget(0.0);
         Control::closeSolenoid();
         Control::setTemperatureTarget(Control::getActiveConfiguration().temps.brew);
@@ -24,7 +24,7 @@ namespace {
     }
 
     void enterSteaming() {
-        IO::setSteamButtonLED(true);
+        IO::setSteamButtonLight(LightState::ON);
         Control::setPressureTarget(0.0);
         Control::closeSolenoid();
         Control::setTemperatureTarget(Control::getActiveConfiguration().temps.steam);
@@ -50,7 +50,7 @@ state_t FSM::update() {
         case IDLE:
             if (buttonState.power) {
                 IO::clearPowerButton();
-                IO::setPowerButtonLED(true);
+                IO::setPowerButtonLight(LightState::ON);
                 enterHeating();
             }
             break;
@@ -59,7 +59,7 @@ state_t FSM::update() {
         case HEATING:
             if (buttonState.power) goIdle();
             else if(buttonState.pump) {
-                IO::setPumpButtonLED(true);
+                IO::setPumpButtonLight(LightState::ON);
                 Control::setPressureTarget(Control::getActiveConfiguration().pressures.preinfusion);
                 Control::openSolenoid();
                 brewTimerStart = millis();
