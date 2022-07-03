@@ -26,13 +26,15 @@ namespace {
     };
 
     // Actors
-    auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, (uint8_t) SolenoidState::CLOSED, SOLENOID_INVERTED);
+    auto solenoidValve = new BinaryActor(SOLENOID_VALVE_PIN, SOLENOID_INVERTED);
 
     auto heaterBlock = new PwmActor(
         HEATER_BLOCK_PIN,
         HEATER_BLOCK_PWM_CHANNEL,
         HEATER_BLOCK_PWM_FREQUENCY
     );
+
+    auto pumpMaster = new BinaryActor(PUMP_MASTER_PIN, PUMP_MASTER_INVERTED);
 
     auto pump = new PwmActor(
         PUMP_PIN,
@@ -77,22 +79,12 @@ configuration_t Control::getActiveConfiguration() {
 
 // Mutators
 void Control::setTemperatureTarget(float newTarget) {
-    if(newTarget > 0) {
-        heaterBlock->activate();
-    } else {
-        heaterBlock->deactivate();
-    }
     temperatureController->setControlTarget(
         constrain(newTarget, 20, MAX_TEMP_TARGET)
     );
 }
 
 void Control::setPressureTarget(float newTarget) {
-    if(newTarget > 0) {
-        pump->activate();
-    } else {
-        pump->deactivate();
-    }
     controlMode = PumpControlMode::PRESSURE;
     pressureController->setControlTarget(newTarget);
 }
@@ -140,11 +132,11 @@ void Control::setPressurePIDCoefs(pidCoefs_t newCoefs) {
 }
 
 void Control::openSolenoid() {
-    solenoidValve->setState((uint8_t) SolenoidState::OPEN);
+    solenoidValve->activate();
 }
 
 void Control::closeSolenoid() {
-    solenoidValve->setState((uint8_t) SolenoidState::CLOSED);
+    solenoidValve->deactivate();
 }
 
 // Update function needs be called each loop
@@ -160,9 +152,17 @@ void Control::update() {
     if (temperatureController->update(temperatureSensor->getSmoothedValue())) {
         heaterBlock->setPowerLevel(temperatureController->getControlValue());
     }
+
     if (controlMode == PumpControlMode::PRESSURE) {
         if (pressureController->update(pressureSensor->getSmoothedValue())) {
-            pump->setPowerLevel(pressureController->getControlValue());
+            auto newControlValue = pressureController->getControlValue();
+            if(newControlValue > 0) {
+                pump->setPowerLevel(newControlValue);
+                pumpMaster->activate();
+            } else {
+                pump->setPowerLevel(0.0f);
+                pumpMaster->deactivate();
+            }
         }
     } else if (controlMode == PumpControlMode::FLOW) {
         // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
@@ -185,6 +185,7 @@ String Control::status() {
     status += "\nPressure controller:\n";
     status += pressureController->status();
     status += "\nPump:\n";
+    status += (String)"Master: " + (pumpMaster->getState() ? "ON" : "OFF") + "\n";
     status += pump->status();
 
     // status += "\n\nFlow sensor:\n";
@@ -192,6 +193,6 @@ String Control::status() {
     // status += "\nFlow controller:\n";
     // status += flowController->status();
 
-    status += (String)"\nSolenoid valve: " + ((solenoidValve->getState() == (uint8_t)SolenoidState::OPEN) ? "Open" : "Closed") + "\n";
+    status += (String)"\nSolenoid valve: " + (solenoidValve->getState() ? "Open" : "Closed") + "\n";
     return status;
 }

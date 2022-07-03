@@ -3,11 +3,11 @@
 //// Class BinaryActor ////
 
 // Constructor
-BinaryActor::BinaryActor(gpio_num_t controlPin, uint8_t initialState, bool inverted) {
+BinaryActor::BinaryActor(gpio_num_t controlPin, bool inverted, BinaryActorState initialState) {
     this->controlPin = controlPin;
     this->inverted = inverted;
 
-    setState(initialState);
+    initialState ? activate() : deactivate();
     pinMode(controlPin, OUTPUT);
 }
 
@@ -17,9 +17,14 @@ uint8_t BinaryActor::getState() {
 }
 
 // Mutators
-void BinaryActor::setState(uint8_t newState) {
-    state = newState;
-    digitalWrite(controlPin, (newState && !inverted) || (!newState && inverted));
+void BinaryActor::activate() {
+    state = ACTIVE;
+    digitalWrite(controlPin, inverted ? LOW : HIGH);
+}
+
+void BinaryActor::deactivate() {
+    state = INACTIVE;
+    digitalWrite(controlPin, inverted ? HIGH : LOW);
 }
 
 //// Class PwmActor ////
@@ -75,7 +80,7 @@ PwmActor::PwmActor(
     pwmDevice->timer[pwmTimer].mode.mode = MCPWM_UP_COUNTER;        // Set timer 0 to increment
     pwmDevice->timer[pwmTimer].mode.start = 2;                      // Set timer 0 to free-run
 
-    pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = 0;   // Set the counter compare
+    setPowerLevel(0.0);   // Set the counter compare
 }
 
 // Accessors

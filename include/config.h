@@ -26,6 +26,9 @@
 
 #define HEATER_BLOCK_PIN GPIO_NUM_25
 
+#define PUMP_MASTER_PIN GPIO_NUM_22
+#define PUMP_MASTER_INVERTED true
+
 #define PUMP_PIN GPIO_NUM_32
 #define PUMP_INVERTED true
 

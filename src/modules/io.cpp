@@ -67,9 +67,9 @@ namespace {
         buttonState.steam = !digitalRead(STEAM_BUTTON);
     }
 
-    auto powerButtonLED = new BinaryActor(POWER_BUTTON_LIGHT, (uint8_t) LightState::OFF);
-    auto pumpButtonLED = new BinaryActor(PUMP_BUTTON_LIGHT, (uint8_t) LightState::OFF);
-    auto steamButtonLED = new BinaryActor(STEAM_BUTTON_LIGHT, (uint8_t) LightState::OFF);
+    auto powerButtonLED = new BinaryActor(POWER_BUTTON_LIGHT);
+    auto pumpButtonLED = new BinaryActor(PUMP_BUTTON_LIGHT);
+    auto steamButtonLED = new BinaryActor(STEAM_BUTTON_LIGHT);
 
 }
 
@@ -102,21 +102,21 @@ buttonState_t IO::getButtonState() {
 }
 
 void IO::turnOffLights() {
-    powerButtonLED->setState((uint8_t) LightState::OFF);
-    pumpButtonLED->setState((uint8_t) LightState::OFF);
-    steamButtonLED->setState((uint8_t) LightState::OFF);
+    powerButtonLED->deactivate();
+    pumpButtonLED->deactivate();
+    steamButtonLED->deactivate();
 }
 
 void IO::setPowerButtonLight(LightState newState) {
-    powerButtonLED->setState((uint8_t) newState);
+    powerButtonLED->activate();
 }
 
 void IO::setPumpButtonLight(LightState newState) {
-    pumpButtonLED->setState((uint8_t) newState);
+    pumpButtonLED->activate();
 }
 
 void IO::setSteamButtonLight(LightState newState) {
-    steamButtonLED->setState((uint8_t) newState);
+    steamButtonLED->activate();
 }
 
 String IO::status() {

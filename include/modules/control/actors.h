@@ -8,15 +8,21 @@
 #include "driver/mcpwm.h"
 #include "../../config.h"
 
+enum BinaryActorState {
+    ACTIVE = 1,
+    INACTIVE = 0
+};
+
 class BinaryActor {
 private:
-    uint8_t state;
+    BinaryActorState state;
     gpio_num_t controlPin;
     bool inverted;
 public:
-    BinaryActor(gpio_num_t controlPin, uint8_t initialState, bool inverted = false);
+    BinaryActor(gpio_num_t controlPin, bool inverted = false, BinaryActorState initialState = INACTIVE);
     uint8_t getState();
-    void setState(uint8_t newState);
+    void activate();
+    void deactivate();
 };
 
 class PwmActor {

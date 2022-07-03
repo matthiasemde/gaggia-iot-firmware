@@ -9,11 +9,6 @@
 
 #include "../../config.h"
 
-enum class SolenoidState {
-    OPEN,
-    CLOSED
-};
-
 typedef struct {
     float brew, steam;
 } temperatures_t;
