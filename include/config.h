@@ -10,6 +10,9 @@
 
 #define TEMP_RREF 430.0
 
+#define THERMAL_RUNAWAY_MAX_DIFF_TO_TARGET 0.5f
+#define THERMAL_RUNAWAY_TIMEOUT 5 // in seconds
+
 #define PIEZO GPIO_NUM_22
 #define PIEZO_CHANNEL 15
 

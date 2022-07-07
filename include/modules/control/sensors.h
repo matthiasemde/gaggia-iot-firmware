@@ -37,6 +37,7 @@ private:
 public:
     TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefsficient);
     void update();
+    bool faultDetected();
     String status();
 };
 

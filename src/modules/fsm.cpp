@@ -39,6 +39,18 @@ void FSM::init() {
 state_t FSM::update() {
     buttonState_t buttonState = IO::getButtonState();
 
+    /*
+    * Thermal runaway protection
+    * If there is an error with the temperature sensor or
+    * the heating element is on, but the temperature is not
+    * changing, then shut off the heater
+    */
+    if(Control::temperatureAnomalyDetected()) {
+        Control::shutOffHeater();
+        Control::openSolenoid();
+        state = SAFETY_OFF;
+    }
+
     switch(state) {
         //////////////   UNINITIALIEZD  ///////////////
         case UNINITIALIZED:
@@ -115,6 +127,11 @@ String FSM::status() {
         case BREWING:
             status = "BREWING\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s\n";
             break;
+        case SAFETY_OFF:
+            status = "SAFETY OFF\n";
+            break;
+        default:
+            status = "UNKNOWN\n";
     }
     return status;
 }

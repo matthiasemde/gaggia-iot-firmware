@@ -11,6 +11,10 @@ PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
     this->lastUpdate = millis();
 }
 
+float PID::getControlTarget() {
+    return controlTarget;
+}
+
 float PID::getControlValue() {
     return controlValue;
 }

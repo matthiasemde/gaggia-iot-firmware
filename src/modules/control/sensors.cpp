@@ -48,7 +48,10 @@ TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingC
 
 void TemperatureSensor::update() {
     setRawValue(maxBoard->temperature(100, rRef));
-    // Serial.println(this->maxBoard->temperature(100, this->rRef));
+}
+
+bool TemperatureSensor::faultDetected() {
+    return (bool) maxBoard->readFault();
 }
 
 String TemperatureSensor::status() {

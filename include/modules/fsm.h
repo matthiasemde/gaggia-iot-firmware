@@ -14,6 +14,7 @@ typedef enum {
     STEAMING,
     PREINFUSION,
     BREWING,
+    SAFETY_OFF
 } state_t;
 
 namespace FSM {

@@ -43,7 +43,11 @@ namespace Control {
 
     configuration_t getActiveConfiguration();
 
+    bool temperatureAnomalyDetected();
+
     // Mutators
+    void shutOffHeater();
+
     void setTemperatureTarget(float newTarget);
     void setPressureTarget(float newTarget);
     void setFlowTarget(float newTarget);

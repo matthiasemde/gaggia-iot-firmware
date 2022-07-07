@@ -32,6 +32,7 @@ public:
         uint16_t period,
         float condIntegralMargin
     );
+    float getControlTarget();
     float getControlValue();
     void setControlTarget(float newControlTarget);
     void setPIDCoefs(pidCoefs_t newCoefs);

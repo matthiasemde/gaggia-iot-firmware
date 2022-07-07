@@ -88,7 +88,7 @@ PwmActor::PwmActor(
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
     // convert from float (0.0 - 1.0) to int (0 - maxDutyCycle)
-    dutyCycle = (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle);
+    dutyCycle = active ? (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle) : 0;
     pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = dutyCycle;
 }
 

@@ -52,6 +52,8 @@ void Control::init() {
         activeConfig = Storage::loadConfiguration();
         temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
         pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
+        heaterBlock->activate();
+        pump->activate();
         initialized = true;
     }
 }
@@ -77,7 +79,37 @@ configuration_t Control::getActiveConfiguration() {
     return activeConfig;
 }
 
+bool Control::temperatureAnomalyDetected() {
+    bool anomalyDetected = temperatureSensor->faultDetected();
+    
+    static uint32_t thermalRunawayTimer = millis();
+    static uint32_t lastCheckTimer = millis();
+    static float lastTempValue = temperatureSensor->getSmoothedValue();
+
+    uint32_t now = millis();
+    float currentTempValue = temperatureSensor->getSmoothedValue();
+
+    // check every 100ms if the temperature is at the target or has sufficiently changed
+    if (now - lastCheckTimer > 100) {
+        if (abs(currentTempValue - temperatureController->getControlTarget()) < THERMAL_RUNAWAY_MAX_DIFF_TO_TARGET ||
+            currentTempValue - lastTempValue > 1.0f) {
+            thermalRunawayTimer = millis();
+        }
+        lastCheckTimer = now;
+    }
+
+    // anomalyDetected |= (now - thermalRunawayTimer > THERMAL_RUNAWAY_TIMEOUT * 1000);
+    anomalyDetected = (now - thermalRunawayTimer > THERMAL_RUNAWAY_TIMEOUT * 1000);
+
+    lastTempValue = currentTempValue;
+    return anomalyDetected;
+}
+
 // Mutators
+void Control::shutOffHeater() {
+    heaterBlock->deactivate();
+}
+
 void Control::setTemperatureTarget(float newTarget) {
     temperatureController->setControlTarget(
         constrain(newTarget, 20, MAX_TEMP_TARGET)
