@@ -4,6 +4,8 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
+#include "include/RTOSConfig.h"
+
 #include "include/credentials.h"
 #include "include/routes/index.h"
 #include "include/routes/info.h"
@@ -22,6 +24,16 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 uint32_t lastStatusUpdate = 0;
+
+void statusUpdateTask(void * parameter) {
+    for( ;; ) {
+        Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
+        Serial.println("\n///////// FSM status /////////\n" + FSM::status());
+        Serial.println("\n///////// Control status /////////\n" + Control::status());
+        Serial.println("\n/////////    IO status   /////////\n" + IO::status());
+        vTaskDelay(3000);
+    }
+}
 
 void setup() {
     Serial.begin(115200);
@@ -59,6 +71,8 @@ void setup() {
     // start server
     server->begin();
     Serial.println("HTTP server started");
+
+    xTaskCreate(statusUpdateTask, "STATUS_UPDATE", 4096, NULL, STATUS_TASK_PRIORITY, NULL);
 }
 
 void loop(void) {
@@ -70,14 +84,5 @@ void loop(void) {
 
     if(gaggiaState != UNINITIALIZED) {
         Control::update();
-
-        // Status update
-        if (lastStatusUpdate + 3000 < millis()) {
-            lastStatusUpdate = millis();
-            Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
-            Serial.println("\n///////// FSM status /////////\n" + FSM::status());
-            Serial.println("\n///////// Control status /////////\n" + Control::status());
-            Serial.println("\n/////////    IO status   /////////\n" + IO::status());
-        }
     }
 }
