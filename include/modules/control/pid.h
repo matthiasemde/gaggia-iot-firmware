@@ -2,26 +2,29 @@
 #define __PID_H__
 
 #include <Arduino.h>
+#include "../../RTOSConfig.h"
 
 typedef struct {
-    float kp = -1.0, ki = -1.0, kd = -1.0;
+    float kp, ki, kd;
 } pidCoefs_t;
 
 class PID {
 private:
-    float integral = 0; // integral over error
-    
-    float lastError = 0; // last error for calculating derivative
-
-    uint32_t lastUpdate; // timestamp of last update
     uint16_t period; // period of controller updates in ms
     float dt; // period in seconds for calculating integral and derivative
 
-    float controlTarget;
+    TaskHandle_t taskHandle; // handle to task
 
-    float controlValue = 0; // current control value
+    QueueHandle_t lastErrorQueue;
+    QueueHandle_t integralQueue;
 
-    float kp = 1.0, ki = 1.0, kd = 1.0; // Coefsficients for P-, I- and D-term
+    QueueHandle_t controlTargetQueue; // queue for passing control target values
+    QueueHandle_t inputQueue; // queue for passing input values
+    QueueHandle_t controlValueQueue; // queue for passing control value values
+
+    QueueHandle_t pidCoefsQueue; // queue holding coeficients for P-, I- and D-term
+
+    SemaphoreHandle_t resetSemaphore; // semaphore for resetting integral
 
     // margin for the conditional integral used to prevent integral windup:
     // https://en.wikipedia.org/wiki/Integral_windup
@@ -34,10 +37,11 @@ public:
     );
     float getControlTarget();
     float getControlValue();
-    void setControlTarget(float newControlTarget);
     void setPIDCoefs(pidCoefs_t newCoefs);
+    void setControlTarget(float newControlTarget);
+    void setInput(float newInput);
     void reset();
-    bool update(float input);
+    static void vTaskUpdate(void * params);
     String status();
 };
 

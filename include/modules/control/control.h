@@ -7,6 +7,7 @@
 #include "actors.h"
 #include "pid.h"
 
+#include "../../RTOSConfig.h"
 #include "../../config.h"
 
 typedef struct {
@@ -67,7 +68,7 @@ namespace Control {
     void closeSolenoid();
 
     // Update function needs to be called each loop
-    void update();
+    void vTaskUpdate(void * parameters);
 
     String status();
 };

@@ -25,13 +25,15 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 uint32_t lastStatusUpdate = 0;
 
-void statusUpdateTask(void * parameter) {
+void vTaskStatusUpdate(void *pvParameters) {
+    timeClient.update();
+
     for( ;; ) {
         Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
         Serial.println("\n///////// FSM status /////////\n" + FSM::status());
         Serial.println("\n///////// Control status /////////\n" + Control::status());
         Serial.println("\n/////////    IO status   /////////\n" + IO::status());
-        vTaskDelay(3000);
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
@@ -72,17 +74,11 @@ void setup() {
     server->begin();
     Serial.println("HTTP server started");
 
-    xTaskCreate(statusUpdateTask, "STATUS_UPDATE", 4096, NULL, STATUS_TASK_PRIORITY, NULL);
+    xTaskCreate(Control::vTaskUpdate, "CONTROL", 4096, NULL, CONTROL_TASK_PRIORITY, NULL);
+    xTaskCreate(FSM::vTaskUpdate, "FSM", 4096, NULL, FSM_TASK_PRIORITY, NULL);
+    xTaskCreate(vTaskStatusUpdate, "STATUS", 4096, NULL, STATUS_TASK_PRIORITY, NULL);
 }
 
 void loop(void) {
-
     server->handleClient();
-    timeClient.update();
-
-    state_t gaggiaState = FSM::update();
-
-    if(gaggiaState != UNINITIALIZED) {
-        Control::update();
-    }
 }

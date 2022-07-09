@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#include"../RTOSConfig.h"
+
 #include "control/control.h"
 #include "io.h"
 
@@ -19,7 +21,8 @@ typedef enum {
 
 namespace FSM {
     void init();
-    state_t update();
+    state_t getState();
+    void vTaskUpdate(void * parameters);
     String status();
 }
 

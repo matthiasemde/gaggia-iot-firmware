@@ -36,102 +36,108 @@ void FSM::init() {
     // state = IDLE;
 }
 
-state_t FSM::update() {
-    buttonState_t buttonState = IO::getButtonState();
-
-    /*
-    * Thermal runaway protection
-    * If there is an error with the temperature sensor or
-    * the heating element is on, but the temperature is not
-    * changing, then shut off the heater
-    */
-    if(Control::temperatureAnomalyDetected()) {
-        Control::shutOffHeater();
-        Control::openSolenoid();
-        state = SAFETY_OFF;
-    }
-
-    switch(state) {
-        //////////////   UNINITIALIEZD  ///////////////
-        case UNINITIALIZED:
-            // TODO: check if all modules are initialized
-            state = IDLE;
-            break;
-
-        //////////////       IDLE       ///////////////
-        case IDLE:
-            if (buttonState.power) {
-                IO::clearPowerButton();
-                IO::setPowerButtonLight(LightState::ON);
-                enterHeating();
-            }
-            break;
-
-        //////////////      HEATING     ///////////////
-        case HEATING:
-            if (buttonState.power) goIdle();
-            else if(buttonState.pump) {
-                IO::setPumpButtonLight(LightState::ON);
-                Control::setPressureTarget(Control::getActiveConfiguration().pressures.preinfusion);
-                Control::openSolenoid();
-                brewTimerStart = millis();
-                state = PREINFUSION;
-            } else if(buttonState.steam) enterSteaming();
-            break;
-
-        //////////////    PREINFUSION   ///////////////
-        case PREINFUSION:
-            if (buttonState.power) goIdle();
-            else if (!buttonState.pump) enterHeating();
-            else if ((millis() - brewTimerStart) > Control::getActiveConfiguration().preinfusionTime * 1000) {
-                Control::setPressureTarget(Control::getActiveConfiguration().pressures.brew);
-                state = BREWING;
-            }
-            break;
-
-        //////////////      BREWING     ///////////////
-        case BREWING:
-            brewTimerStop = millis();
-            if (buttonState.power) goIdle();
-            else if (!buttonState.pump) enterHeating();
-            break;
-
-        //////////////      STEAMING    ///////////////
-        case STEAMING:
-            if (buttonState.power) goIdle();
-            else if (!buttonState.steam) enterHeating();
-            else if (buttonState.pump) // TODO: figure out what to do here ¯\_(ツ)_/¯
-            break;
-    }
+state_t FSM::getState() {
     return state;
+}
+
+void FSM::vTaskUpdate(void * parameters) {
+    for( ;; ) {
+        buttonState_t buttonState = IO::getButtonState();
+
+        /*
+        * Thermal runaway protection
+        * If there is an error with the temperature sensor or
+        * the heating element is on, but the temperature is not
+        * changing, then shut off the heater
+        */
+        if(Control::temperatureAnomalyDetected()) {
+            Control::shutOffHeater();
+            Control::openSolenoid();
+            state = SAFETY_OFF;
+        }
+
+        switch(state) {
+            //////////////   UNINITIALIEZD  ///////////////
+            case UNINITIALIZED:
+                // TODO: check if all modules are initialized
+                state = IDLE;
+                break;
+
+            //////////////       IDLE       ///////////////
+            case IDLE:
+                if (buttonState.power) {
+                    IO::clearPowerButton();
+                    IO::setPowerButtonLight(LightState::ON);
+                    enterHeating();
+                }
+                break;
+
+            //////////////      HEATING     ///////////////
+            case HEATING:
+                if (buttonState.power) goIdle();
+                else if(buttonState.pump) {
+                    IO::setPumpButtonLight(LightState::ON);
+                    Control::setPressureTarget(Control::getActiveConfiguration().pressures.preinfusion);
+                    Control::openSolenoid();
+                    brewTimerStart = millis();
+                    state = PREINFUSION;
+                } else if(buttonState.steam) enterSteaming();
+                break;
+
+            //////////////    PREINFUSION   ///////////////
+            case PREINFUSION:
+                if (buttonState.power) goIdle();
+                else if (!buttonState.pump) enterHeating();
+                else if ((millis() - brewTimerStart) > Control::getActiveConfiguration().preinfusionTime * 1000) {
+                    Control::setPressureTarget(Control::getActiveConfiguration().pressures.brew);
+                    state = BREWING;
+                }
+                break;
+
+            //////////////      BREWING     ///////////////
+            case BREWING:
+                brewTimerStop = millis();
+                if (buttonState.power) goIdle();
+                else if (!buttonState.pump) enterHeating();
+                break;
+
+            //////////////      STEAMING    ///////////////
+            case STEAMING:
+                if (buttonState.power) goIdle();
+                else if (!buttonState.steam) enterHeating();
+                else if (buttonState.pump) // TODO: figure out what to do here ¯\_(ツ)_/¯
+                break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(FSM_TASK_DELAY));
+    }
 }
 
 String FSM::status() {
     String status = "";
     switch (state) {
         case UNINITIALIZED:
-            status = "UNINITIALIZED\n";
+            status = "UNINITIALIZED";
             break;
         case IDLE:
-            status = "IDLE\n";
+            status = "IDLE";
             break;
         case HEATING:
-            status = "HEATING\n";
+            status = "HEATING";
             break;
         case STEAMING:
-            status = "STEAMING\n";
+            status = "STEAMING";
             break;
         case PREINFUSION:
-            status = "PREINFUSION\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s\n";
+            status = "PREINFUSION\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s";
             break;
         case BREWING:
-            status = "BREWING\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s\n";
+            status = "BREWING\nBrew timer: " + (String) (round((millis() - brewTimerStart)/1000)) + "s";
             break;
         case SAFETY_OFF:
-            status = "SAFETY OFF\n";
+            status = "SAFETY OFF";
             break;
         default:
-            status = "UNKNOWN\n";
+            status = "UNKNOWN";
     }
     return status;
 }

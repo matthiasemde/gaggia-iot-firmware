@@ -44,11 +44,16 @@ namespace {
         0.9f,
         PUMP_INVERTED
     );
+
+    SemaphoreHandle_t controlSemaphore = NULL;
 }
 
 
 void Control::init() {
     if (!initialized) {
+        controlSemaphore = xSemaphoreCreateBinary();
+        xSemaphoreGive(controlSemaphore);
+
         activeConfig = Storage::loadConfiguration();
         temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
         pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
@@ -112,7 +117,7 @@ void Control::shutOffHeater() {
 
 void Control::setTemperatureTarget(float newTarget) {
     temperatureController->setControlTarget(
-        constrain(newTarget, 20, MAX_TEMP_TARGET)
+        constrain(newTarget, 0, MAX_TEMP_TARGET)
     );
 }
 
@@ -172,21 +177,20 @@ void Control::closeSolenoid() {
 }
 
 // Update function needs be called each loop
-void Control::update() {
+void Control::vTaskUpdate(void * parameters) {
+    for( ;; ) {
+        // Update sensors
+        temperatureSensor->update();
+        pressureSensor->update();
+        // flowSensor->update();
 
-    // Update sensors
-    temperatureSensor->update();
-    pressureSensor->update();
-    // flowSensor->update();
 
-
-    // Update controllers
-    if (temperatureController->update(temperatureSensor->getSmoothedValue())) {
+        // Update controllers
+        temperatureController->setInput(temperatureSensor->getSmoothedValue());
         heaterBlock->setPowerLevel(temperatureController->getControlValue());
-    }
 
-    if (controlMode == PumpControlMode::PRESSURE) {
-        if (pressureController->update(pressureSensor->getSmoothedValue())) {
+        if (controlMode == PumpControlMode::PRESSURE) {
+            pressureController->setInput(pressureSensor->getSmoothedValue());
             auto newControlValue = pressureController->getControlValue();
             if(newControlValue > 0) {
                 pump->setPowerLevel(newControlValue);
@@ -195,11 +199,13 @@ void Control::update() {
                 pump->setPowerLevel(0.0f);
                 pumpMaster->deactivate();
             }
+        } else if (controlMode == PumpControlMode::FLOW) {
+            // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
+            //     pump->setPowerLevel(nextControlValue);
+            // }
         }
-    } else if (controlMode == PumpControlMode::FLOW) {
-        // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
-        //     pump->setPowerLevel(nextControlValue);
-        // }
+        
+        vTaskDelay(pdMS_TO_TICKS(CONTROL_TASK_DELAY));
     }
 }
 
