@@ -30,14 +30,16 @@ PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
 
 // Accessors
 
-float PID::getControlTarget() {
-    float controlTarget;
-    return xQueuePeek(controlTargetQueue, &controlTarget, 0) == pdTRUE ? controlTarget : -1;
+void PID::getControlTarget(float * controlTarget) {
+    if(xQueuePeek(controlTargetQueue, controlTarget, 0) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
 }
 
-float PID::getControlValue() {
-    float controlValue;
-    return xQueuePeek(controlValueQueue, &controlValue, 0) == pdTRUE ? controlValue : -1;
+void PID::getControlValue(float * controlValue) {
+    if(xQueuePeek(controlValueQueue, controlValue, 0) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
 }
 
 
@@ -118,14 +120,14 @@ String PID::status() {
     xQueuePeek(controlTargetQueue, &controlTarget, pdMS_TO_TICKS(10));
     xQueuePeek(pidCoefsQueue, &pidCoefs, pdMS_TO_TICKS(10));
     xQueuePeek(inputQueue, &input, pdMS_TO_TICKS(10));
-    xQueuePeek(lastErrorQueue, &input, pdMS_TO_TICKS(10));
+    xQueuePeek(lastErrorQueue, &lastError, pdMS_TO_TICKS(10));
     xQueuePeek(integralQueue, &integral, pdMS_TO_TICKS(10));
     xQueuePeek(controlValueQueue, &controlValue, pdMS_TO_TICKS(10));
 
     String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(taskHandle)) +
         "\nControl Target:\t " + String(controlTarget) +
         "\nCoefficients:\t (p " + String(pidCoefs.kp) + ", i " + String(pidCoefs.ki) + ", d " + String(pidCoefs.kd) + ")" +
-        "\nLast Error:\t\t " + String(lastError) +
+        "\nError:\t\t\t " + String(lastError) +
         "\nIntegral:\t\t " + String(integral) +
         "\nControl Value:\t " + String(controlValue) + "\n";
     return status;

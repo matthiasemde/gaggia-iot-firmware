@@ -47,6 +47,7 @@ namespace Control {
     bool temperatureAnomalyDetected();
 
     // Mutators
+    void turnOnHeater();
     void shutOffHeater();
 
     void setTemperatureTarget(float newTarget);

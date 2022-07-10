@@ -45,7 +45,50 @@ namespace {
         PUMP_INVERTED
     );
 
+    SemaphoreHandle_t noTempControlValue = NULL;
+    SemaphoreHandle_t noPressureControlValue = NULL;
+    
+    // This Semaphore is used as a flag to signal that the thermal runaway protection triggered
+    SemaphoreHandle_t TRPTrigger = NULL;
+
     TaskHandle_t xHandle = NULL;
+       
+    void vTaskTRP(void* parameters) {
+        float temperature, diffToTarget = 0.0, lastDiffToTarget = 0.0, controlTarget = 0.0;
+        for( ;; ) {            
+            if(temperatureSensor->faultDetected()) {
+                xSemaphoreGive(TRPTrigger);
+            }
+            
+            temperature = temperatureSensor->getSmoothedValue();
+
+            try {
+                temperatureController->getControlTarget(&controlTarget);
+            } catch(...) {
+                controlTarget = 0.0;
+            }
+
+            diffToTarget = controlTarget - temperatureSensor->getSmoothedValue();
+
+            // if the temperature or control target are negative, something is wrong
+            if(temperature < 0 || controlTarget < 0) {
+                xSemaphoreGive(TRPTrigger);
+            // check every few seconds if the temperature is around the target or has sufficiently moved towards it
+            } else if(diffToTarget > TRP_MAX_DIFF_TO_TARGET && diffToTarget - lastDiffToTarget < 5.0f) {
+                xSemaphoreGive(TRPTrigger);
+            }
+
+            // Serial.println("TRP:\nTemperature: " + 
+            //     String(temperature) + "\nControl Target: " + String(controlTarget) +
+            //     "\nDiff to Target: " + String(diffToTarget) +
+            //     "\nLast Diff to Target: " + String(lastDiffToTarget)
+            // );
+
+            lastDiffToTarget = diffToTarget;
+
+            vTaskDelay(pdMS_TO_TICKS(TRP_INTERVAL * 1000));
+        }
+    } 
 }
 
 
@@ -54,10 +97,13 @@ void Control::init() {
         activeConfig = Storage::loadConfiguration();
         temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
         pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
-        heaterBlock->activate();
         pump->activate();
-        initialized = true;
         
+        noTempControlValue = xSemaphoreCreateBinary();
+        noPressureControlValue = xSemaphoreCreateBinary();
+
+        TRPTrigger = xSemaphoreCreateBinary();
+
         xTaskCreate(
             vTaskUpdate,
             "CONTROL",
@@ -66,6 +112,17 @@ void Control::init() {
             CONTROL_TASK_PRIORITY,
             &xHandle
         );
+
+        xTaskCreate(
+            vTaskTRP,
+            "THERMAL RUNAWAY PROTECTION",
+            TRP_TASK_STACK_SIZE,
+            NULL,
+            TRP_TASK_PRIORITY,
+            NULL
+        );
+
+        initialized = true;
     }
 }
 
@@ -91,32 +148,14 @@ configuration_t Control::getActiveConfiguration() {
 }
 
 bool Control::temperatureAnomalyDetected() {
-    bool anomalyDetected = temperatureSensor->faultDetected();
-    
-    static uint32_t thermalRunawayTimer = millis();
-    static uint32_t lastCheckTimer = millis();
-    static float lastTempValue = temperatureSensor->getSmoothedValue();
-
-    uint32_t now = millis();
-    float currentTempValue = temperatureSensor->getSmoothedValue();
-
-    // check every 100ms if the temperature is at the target or has sufficiently changed
-    if (now - lastCheckTimer > 100) {
-        if (abs(currentTempValue - temperatureController->getControlTarget()) < THERMAL_RUNAWAY_MAX_DIFF_TO_TARGET ||
-            currentTempValue - lastTempValue > 1.0f) {
-            thermalRunawayTimer = millis();
-        }
-        lastCheckTimer = now;
-    }
-
-    // anomalyDetected |= (now - thermalRunawayTimer > THERMAL_RUNAWAY_TIMEOUT * 1000);
-    anomalyDetected = (now - thermalRunawayTimer > THERMAL_RUNAWAY_TIMEOUT * 1000);
-
-    lastTempValue = currentTempValue;
-    return anomalyDetected;
+    return xSemaphoreTake(TRPTrigger, 0) == pdTRUE;
 }
 
 // Mutators
+void Control::turnOnHeater() {
+    heaterBlock->activate();
+}
+
 void Control::shutOffHeater() {
     heaterBlock->deactivate();
 }
@@ -184,6 +223,8 @@ void Control::closeSolenoid() {
 
 // Update function needs be called each loop
 void Control::vTaskUpdate(void * parameters) {
+    float tempControlValue = 0.0, pressureControlValue = 0.0;
+
     for( ;; ) {
         // Update sensors
         temperatureSensor->update();
@@ -193,17 +234,29 @@ void Control::vTaskUpdate(void * parameters) {
 
         // Update controllers
         temperatureController->setInput(temperatureSensor->getSmoothedValue());
-        heaterBlock->setPowerLevel(temperatureController->getControlValue());
+        try {
+            temperatureController->getControlValue(&tempControlValue);
+            heaterBlock->setPowerLevel(tempControlValue);
+            xSemaphoreTake(noTempControlValue, 0);
+        } catch (std::exception e) {
+            xSemaphoreGive(noTempControlValue);
+        }
+
 
         if (controlMode == PumpControlMode::PRESSURE) {
             pressureController->setInput(pressureSensor->getSmoothedValue());
-            auto newControlValue = pressureController->getControlValue();
-            if(newControlValue > 0) {
-                pump->setPowerLevel(newControlValue);
-                pumpMaster->activate();
-            } else {
-                pump->setPowerLevel(0.0f);
-                pumpMaster->deactivate();
+            try {
+                pressureController->getControlValue(&pressureControlValue);
+                if(pressureControlValue > 0) {
+                    pump->setPowerLevel(pressureControlValue);
+                    pumpMaster->activate();
+                } else {
+                    pump->setPowerLevel(0.0f);
+                    pumpMaster->deactivate();
+                }
+                xSemaphoreTake(noPressureControlValue, 0);
+            } catch (std::exception e) {
+                xSemaphoreGive(noPressureControlValue);
             }
         } else if (controlMode == PumpControlMode::FLOW) {
             // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
@@ -220,6 +273,10 @@ String Control::status() {
     status += "Temperature sensor:\n";
     status += temperatureSensor->status();
     status += "\nTemperature controller:\n";
+    if(xSemaphoreTake(noTempControlValue, 0) == pdTRUE) {
+        status += "NO CONTROL VALUE\n"; 
+        xSemaphoreGive(noTempControlValue);
+    }
     status += temperatureController->status();
     status += "\nHeater Block:\n";
     status += heaterBlock->status();
@@ -227,6 +284,10 @@ String Control::status() {
     status += "\nPressure sensor:\n";
     status += pressureSensor->status();
     status += "\nPressure controller:\n";
+    if(xSemaphoreTake(noPressureControlValue, 0) == pdTRUE) {
+        status += "NO CONTROL VALUE\n"; 
+        xSemaphoreGive(noPressureControlValue);
+    }
     status += pressureController->status();
     status += "\nPump:\n";
     status += (String)"Master: " + (pumpMaster->getState() ? "ON" : "OFF") + "\n";

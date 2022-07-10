@@ -80,7 +80,7 @@ PwmActor::PwmActor(
     pwmDevice->timer[pwmTimer].mode.mode = MCPWM_UP_COUNTER;        // Set timer 0 to increment
     pwmDevice->timer[pwmTimer].mode.start = 2;                      // Set timer 0 to free-run
 
-    setPowerLevel(0.0);   // Set the counter compare
+    setPowerLevel(0.0);
 }
 
 // Accessors
@@ -88,25 +88,19 @@ PwmActor::PwmActor(
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
     // convert from float (0.0 - 1.0) to int (0 - maxDutyCycle)
-    dutyCycle = active ? (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle) : 0;
+    dutyCycle = active ? (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle) : minOut;
     pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = dutyCycle;
 }
 
 void PwmActor::activate() {
-    if(!active) {
-        // ledcAttachPin(controlPin, pwmChannel);
-        active = true;
-    }
+    active = true;
 }
 
 void PwmActor::deactivate() {
-    if(active) {
-        // ledcDetachPin(controlPin);
-        active = false;
-    }
+    active = false;
 }
 
 String PwmActor::status() {
-    return "Prescaler: " + String(prescale)+ "^2\n" +
-        "Duty cycle: " + String(dutyCycle) + " / " + String(maxDutyCycle) + "\n";
+    return (!active ? "INACTIVE" : "Prescaler: " + String(prescale)+ "^2\n" +
+        "Duty cycle: " + String(dutyCycle) + " / " + String(maxDutyCycle)) + "\n";
 }

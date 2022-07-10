@@ -8,8 +8,9 @@ namespace {
     void goIdle() {
         IO::clearPowerButton();
         IO::turnOffLights();
-        Control::setPressureTarget(0.0);
         Control::closeSolenoid();
+        Control::shutOffHeater();
+        Control::setPressureTarget(0.0);
         Control::setTemperatureTarget(0.0);
         state = IDLE;
     }
@@ -60,7 +61,7 @@ void FSM::vTaskUpdate(void * parameters) {
         * the heating element is on, but the temperature is not
         * changing, then shut off the heater
         */
-        if(Control::temperatureAnomalyDetected()) {
+        if(Control::temperatureAnomalyDetected() && state != SAFETY_OFF) {
             Control::shutOffHeater();
             Control::openSolenoid();
             state = SAFETY_OFF;
@@ -78,6 +79,7 @@ void FSM::vTaskUpdate(void * parameters) {
                 if (buttonState.power) {
                     IO::clearPowerButton();
                     IO::setPowerButtonLight(LightState::ON);
+                    Control::turnOnHeater();
                     enterHeating();
                 }
                 break;

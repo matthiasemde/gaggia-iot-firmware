@@ -48,16 +48,6 @@ void setup() {
     IO::init();
     FSM::init();
 
-    // create the status update task
-    xTaskCreate(
-        vTaskStatusUpdate,
-        "STATUS",
-        STATUS_TASK_STACK_SIZE,
-        NULL,
-        STATUS_TASK_PRIORITY,
-        NULL
-    );
-
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     Serial.println("");
@@ -86,6 +76,15 @@ void setup() {
     server->begin();
     Serial.println("HTTP server started");
 
+    // create the status update task
+    xTaskCreate(
+        vTaskStatusUpdate,
+        "STATUS",
+        STATUS_TASK_STACK_SIZE,
+        NULL,
+        STATUS_TASK_PRIORITY,
+        NULL
+    );
 }
 
 void loop(void) {
