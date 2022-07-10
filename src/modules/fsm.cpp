@@ -30,10 +30,20 @@ namespace {
         Control::setTemperatureTarget(Control::getActiveConfiguration().temps.steam);
         state = STEAMING;
     }
+
+    TaskHandle_t xHandle = NULL;
 }
 
 void FSM::init() {
     // state = IDLE;
+    xTaskCreate(
+        vTaskUpdate,
+        "FSM",
+        FSM_TASK_STACK_SIZE,
+        NULL,
+        FSM_TASK_PRIORITY,
+        &xHandle
+    );
 }
 
 state_t FSM::getState() {
@@ -113,7 +123,7 @@ void FSM::vTaskUpdate(void * parameters) {
 }
 
 String FSM::status() {
-    String status = "";
+    String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(xHandle)) + "\n";
     switch (state) {
         case UNINITIALIZED:
             status = "UNINITIALIZED";

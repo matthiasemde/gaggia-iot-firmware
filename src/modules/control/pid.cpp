@@ -20,7 +20,7 @@ PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
     xTaskCreate(
         vTaskUpdate,
         "PID",
-        configMINIMAL_STACK_SIZE,
+        PID_TASK_STACK_SIZE,
         this,
         PID_TASK_PRIORITY,
         &this->taskHandle
@@ -118,10 +118,12 @@ String PID::status() {
     xQueuePeek(controlTargetQueue, &controlTarget, pdMS_TO_TICKS(10));
     xQueuePeek(pidCoefsQueue, &pidCoefs, pdMS_TO_TICKS(10));
     xQueuePeek(inputQueue, &input, pdMS_TO_TICKS(10));
+    xQueuePeek(lastErrorQueue, &input, pdMS_TO_TICKS(10));
     xQueuePeek(integralQueue, &integral, pdMS_TO_TICKS(10));
     xQueuePeek(controlValueQueue, &controlValue, pdMS_TO_TICKS(10));
 
-    String status = "Control Target:\t " + String(controlTarget) +
+    String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(taskHandle)) +
+        "\nControl Target:\t " + String(controlTarget) +
         "\nCoefficients:\t (p " + String(pidCoefs.kp) + ", i " + String(pidCoefs.ki) + ", d " + String(pidCoefs.kd) + ")" +
         "\nLast Error:\t\t " + String(lastError) +
         "\nIntegral:\t\t " + String(integral) +

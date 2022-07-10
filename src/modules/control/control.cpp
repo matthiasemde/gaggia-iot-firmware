@@ -45,21 +45,27 @@ namespace {
         PUMP_INVERTED
     );
 
-    SemaphoreHandle_t controlSemaphore = NULL;
+    TaskHandle_t xHandle = NULL;
 }
 
 
 void Control::init() {
     if (!initialized) {
-        controlSemaphore = xSemaphoreCreateBinary();
-        xSemaphoreGive(controlSemaphore);
-
         activeConfig = Storage::loadConfiguration();
         temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
         pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
         heaterBlock->activate();
         pump->activate();
         initialized = true;
+        
+        xTaskCreate(
+            vTaskUpdate,
+            "CONTROL",
+            CONTROL_TASK_STACK_SIZE,
+            NULL,
+            CONTROL_TASK_PRIORITY,
+            &xHandle
+        );
     }
 }
 
@@ -210,7 +216,7 @@ void Control::vTaskUpdate(void * parameters) {
 }
 
 String Control::status() {
-    String status = "";
+    String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(xHandle)) + "\n";
     status += "Temperature sensor:\n";
     status += temperatureSensor->status();
     status += "\nTemperature controller:\n";

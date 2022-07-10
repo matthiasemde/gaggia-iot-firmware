@@ -30,6 +30,8 @@ void vTaskStatusUpdate(void *pvParameters) {
 
     for( ;; ) {
         Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
+        Serial.println("Total remaining heap: " + String(xPortGetFreeHeapSize()));
+        Serial.println("Remaining stack size for status task: " + String(uxTaskGetStackHighWaterMark(NULL)));
         Serial.println("\n///////// FSM status /////////\n" + FSM::status());
         Serial.println("\n///////// Control status /////////\n" + Control::status());
         Serial.println("\n/////////    IO status   /////////\n" + IO::status());
@@ -45,6 +47,16 @@ void setup() {
     Control::init();
     IO::init();
     FSM::init();
+
+    // create the status update task
+    xTaskCreate(
+        vTaskStatusUpdate,
+        "STATUS",
+        STATUS_TASK_STACK_SIZE,
+        NULL,
+        STATUS_TASK_PRIORITY,
+        NULL
+    );
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -74,9 +86,6 @@ void setup() {
     server->begin();
     Serial.println("HTTP server started");
 
-    xTaskCreate(Control::vTaskUpdate, "CONTROL", 4096, NULL, CONTROL_TASK_PRIORITY, NULL);
-    xTaskCreate(FSM::vTaskUpdate, "FSM", 4096, NULL, FSM_TASK_PRIORITY, NULL);
-    xTaskCreate(vTaskStatusUpdate, "STATUS", 4096, NULL, STATUS_TASK_PRIORITY, NULL);
 }
 
 void loop(void) {
