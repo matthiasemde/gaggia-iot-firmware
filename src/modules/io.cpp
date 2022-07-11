@@ -95,7 +95,7 @@ void IO::init() {
     pumpButtonState = !digitalRead(PUMP_BUTTON);
     steamButtonState = !digitalRead(STEAM_BUTTON);
 
-    attachInterrupt(POWER_BUTTON, powerButtonISR, RISING);
+    attachInterrupt(POWER_BUTTON, powerButtonISR, FALLING);
     attachInterrupt(PUMP_BUTTON, pumpButtonISR, CHANGE);
     attachInterrupt(STEAM_BUTTON, steamButtonISR, CHANGE);
 }
