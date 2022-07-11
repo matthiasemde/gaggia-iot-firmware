@@ -97,7 +97,9 @@ namespace {
 void Control::init() {
     if (!initialized) {
         activeConfigMutex = xSemaphoreCreateMutex();
-        xSemaphoreTake(activeConfigMutex, portMAX_DELAY);
+        if(xSemaphoreTake(activeConfigMutex, 1000) == pdFALSE) {
+            Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
+        }
         activeConfig = Storage::loadConfiguration();
         xSemaphoreGive(activeConfigMutex);
 
@@ -152,7 +154,7 @@ float Control::getSmoothedPressure() {
 configuration_t Control::getActiveConfiguration() {
     configuration_t config;
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     config = activeConfig;
     xSemaphoreGive(activeConfigMutex);
@@ -190,7 +192,7 @@ void Control::setFlowTarget(float newTarget) {
 
 void Control::setBrewTemperature(float newValue) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.temps.brew = newValue;
     xSemaphoreGive(activeConfigMutex);
@@ -199,7 +201,7 @@ void Control::setBrewTemperature(float newValue) {
 
 void Control::setSteamTemperature(float newValue) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.temps.steam = newValue;
     xSemaphoreGive(activeConfigMutex);
@@ -208,7 +210,7 @@ void Control::setSteamTemperature(float newValue) {
 
 void Control::setBrewPressure(float newValue) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.pressures.brew = newValue;
     xSemaphoreGive(activeConfigMutex);
@@ -217,7 +219,7 @@ void Control::setBrewPressure(float newValue) {
 
 void Control::setPreinfusionPressure(float newValue) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.pressures.preinfusion = newValue;
     xSemaphoreGive(activeConfigMutex);
@@ -226,7 +228,7 @@ void Control::setPreinfusionPressure(float newValue) {
 
 void Control::setPreinfusionTime(uint16_t newValue) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.preinfusionTime = newValue;
     xSemaphoreGive(activeConfigMutex);
@@ -235,7 +237,7 @@ void Control::setPreinfusionTime(uint16_t newValue) {
 
 void Control::setTemperaturePIDCoefs(pidCoefs_t newCoefs) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.temperaturePIDCoefs = newCoefs;
     xSemaphoreGive(activeConfigMutex);
@@ -246,7 +248,7 @@ void Control::setTemperaturePIDCoefs(pidCoefs_t newCoefs) {
 
 void Control::setPressurePIDCoefs(pidCoefs_t newCoefs) {
     if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
-        throw std::__throw_runtime_error;
+        Serial.println("\nConfig semaphore unavailable!\n"); throw std::__throw_runtime_error;
     }
     activeConfig.pressurePIDCoefs = newCoefs;
     xSemaphoreGive(activeConfigMutex);
