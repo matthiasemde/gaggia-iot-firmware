@@ -7,6 +7,8 @@ BinaryActor::BinaryActor(gpio_num_t controlPin, bool inverted, BinaryActorState 
     this->controlPin = controlPin;
     this->inverted = inverted;
 
+    this->mutex = xSemaphoreCreateMutex();
+
     initialState ? activate() : deactivate();
     pinMode(controlPin, OUTPUT);
 }
@@ -18,13 +20,17 @@ uint8_t BinaryActor::getState() {
 
 // Mutators
 void BinaryActor::activate() {
+    xSemaphoreTake(mutex, 10); 
     state = ACTIVE;
     digitalWrite(controlPin, inverted ? LOW : HIGH);
+    xSemaphoreGive(mutex);
 }
 
 void BinaryActor::deactivate() {
+    xSemaphoreTake(mutex, 10);
     state = INACTIVE;
     digitalWrite(controlPin, inverted ? HIGH : LOW);
+    xSemaphoreGive(mutex);
 }
 
 //// Class PwmActor ////
@@ -87,8 +93,8 @@ PwmActor::PwmActor(
 
 // Mutators
 void PwmActor::setPowerLevel(float newPowerLevel) {
-    // convert from float (0.0 - 1.0) to int (0 - maxDutyCycle)
-    dutyCycle = active ? (uint16_t) round(constrain(newPowerLevel, minOut, maxOut) * maxDutyCycle) : minOut;
+    // convert from float (minOut - maxOut) to int (0 - maxDutyCycle)
+    dutyCycle = (uint16_t) round((active ? constrain(newPowerLevel, minOut, maxOut) : minOut) * maxDutyCycle);
     pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = dutyCycle;
 }
 
@@ -98,6 +104,7 @@ void PwmActor::activate() {
 
 void PwmActor::deactivate() {
     active = false;
+    // setPowerLevel(0.0); this would be nice, but would mean that setPowerLevel() would become a critical section
 }
 
 String PwmActor::status() {
