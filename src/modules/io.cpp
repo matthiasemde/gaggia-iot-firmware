@@ -1,6 +1,8 @@
 #include "../../include/modules/io.h"
 
 namespace {
+    SemaphoreHandle_t piezoSemaphore = NULL;
+
     uint8_t tuneIndex;
 
     typedef struct {
@@ -43,6 +45,7 @@ namespace {
         } else {
             ledcDetachPin(PIEZO);
             esp_timer_delete(tuneTimerHandle);
+            xSemaphoreGive(piezoSemaphore);
         }
     };
 
@@ -53,36 +56,44 @@ namespace {
         "TuneTimer"
     };
 
-    buttonState_t buttonState;
+    // Define the volatile variables which are changed by the button ISRs
+    // note that powerButtonFlag is merely a flag which indicates that the button
+    // has been pressed and will need to be cleared by calling clearPowerButton()
+    volatile bool powerButtonFlag = false;
+    volatile bool pumpButtonState = false;
+    volatile bool steamButtonState = false;
 
     void IRAM_ATTR powerButtonISR() {
-        buttonState.power = true;
+        powerButtonFlag = true;
     }
 
     void IRAM_ATTR pumpButtonISR() {
-        buttonState.pump = !digitalRead(PUMP_BUTTON);
+        pumpButtonState = !digitalRead(PUMP_BUTTON);
     }
 
     void IRAM_ATTR steamButtonISR() {
-        buttonState.steam = !digitalRead(STEAM_BUTTON);
+        steamButtonState = !digitalRead(STEAM_BUTTON);
     }
 
     auto powerButtonLED = new BinaryActor(POWER_BUTTON_LIGHT);
     auto pumpButtonLED = new BinaryActor(PUMP_BUTTON_LIGHT);
     auto steamButtonLED = new BinaryActor(STEAM_BUTTON_LIGHT);
-
 }
 
 void IO::init() {
+    piezoSemaphore = xSemaphoreCreateBinary();
+    xSemaphoreGive(piezoSemaphore);
+
     ledcSetup(PIEZO_CHANNEL, 5000, 8);
 
     pinMode(POWER_BUTTON, INPUT_PULLUP);
     pinMode(PUMP_BUTTON, INPUT_PULLUP);
     pinMode(STEAM_BUTTON, INPUT_PULLUP);
 
-    buttonState.power = false;
-    buttonState.pump = !digitalRead(PUMP_BUTTON);
-    buttonState.steam = !digitalRead(STEAM_BUTTON);
+    // no critical section here, since this is called before ISRs are attached
+    powerButtonFlag = false;
+    pumpButtonState = !digitalRead(PUMP_BUTTON);
+    steamButtonState = !digitalRead(STEAM_BUTTON);
 
     attachInterrupt(POWER_BUTTON, powerButtonISR, RISING);
     attachInterrupt(PUMP_BUTTON, pumpButtonISR, CHANGE);
@@ -90,15 +101,16 @@ void IO::init() {
 }
 
 void IO::sayHello() {
-    tuneIndex = 0;
-
-    esp_timer_create(&tuneTimerArgs, &tuneTimerHandle);
-    ledcAttachPin(PIEZO, 15);
-    esp_timer_start_once(tuneTimerHandle, (uint64_t) 1);
+    if (xSemaphoreTake(piezoSemaphore, 0) == pdTRUE) {
+        tuneIndex = 0;
+        esp_timer_create(&tuneTimerArgs, &tuneTimerHandle);
+        ledcAttachPin(PIEZO, 15);
+        esp_timer_start_once(tuneTimerHandle, (uint64_t) 1);
+    }
 }
 
 buttonState_t IO::getButtonState() {
-    return buttonState;
+    return {(powerButtonFlag | (pumpButtonState << 1) | (steamButtonState << 2))};
 }
 
 void IO::turnOffLights() {
@@ -122,14 +134,14 @@ void IO::setSteamButtonLight(LightState newState) {
 String IO::status() {
     String status = "";
     status += (String) "Button state:\nPower Flag: " +
-        ((buttonState.power) ? "set" : "clear") +
+        ((powerButtonFlag) ? "set" : "clear") +
         "\nPump: " +
-        ((buttonState.pump) ? "on" : "off") +
+        ((pumpButtonState) ? "on" : "off") +
         "\nSteam: " +
-        ((buttonState.steam) ? "on" : "off");
+        ((steamButtonState) ? "on" : "off");
     return status;
 }
 
 void IO::clearPowerButton() {
-    buttonState.power = false;
+    powerButtonFlag = false;
 }

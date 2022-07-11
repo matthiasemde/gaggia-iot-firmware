@@ -26,8 +26,6 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 uint32_t lastStatusUpdate = 0;
 
 void vTaskStatusUpdate(void *pvParameters) {
-    timeClient.update();
-
     for( ;; ) {
         Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
         Serial.println("Total remaining heap: " + String(xPortGetFreeHeapSize()));
@@ -88,5 +86,6 @@ void setup() {
 }
 
 void loop(void) {
+    timeClient.update();
     server->handleClient();
 }

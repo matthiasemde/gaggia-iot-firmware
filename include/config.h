@@ -10,7 +10,7 @@
 
 #define TEMP_RREF 430.0
 
-#define DO_THERMAL_RUNAWAY_PROTECTION
+#define DO_THERMAL_RUNAWAY_PROTECTION false
 #define TRP_MAX_DIFF_TO_TARGET 0.5f
 #define TRP_INTERVAL 15 // in seconds
 

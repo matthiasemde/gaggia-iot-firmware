@@ -113,14 +113,16 @@ void Control::init() {
             &xHandle
         );
 
-        xTaskCreate(
-            vTaskTRP,
-            "THERMAL RUNAWAY PROTECTION",
-            TRP_TASK_STACK_SIZE,
-            NULL,
-            TRP_TASK_PRIORITY,
-            NULL
-        );
+        if (DO_THERMAL_RUNAWAY_PROTECTION) {
+            xTaskCreate(
+                vTaskTRP,
+                "THERMAL RUNAWAY PROTECTION",
+                TRP_TASK_STACK_SIZE,
+                NULL,
+                TRP_TASK_PRIORITY,
+                NULL
+            );
+        }
 
         initialized = true;
     }
@@ -148,7 +150,7 @@ configuration_t Control::getActiveConfiguration() {
 }
 
 bool Control::temperatureAnomalyDetected() {
-    return xSemaphoreTake(TRPTrigger, 0) == pdTRUE;
+    return DO_THERMAL_RUNAWAY_PROTECTION && xSemaphoreTake(TRPTrigger, 0) == pdTRUE;
 }
 
 // Mutators
