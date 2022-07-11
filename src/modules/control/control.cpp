@@ -6,6 +6,7 @@ namespace {
 
     auto controlMode = PumpControlMode::PRESSURE;
 
+    SemaphoreHandle_t activeConfigMutex = NULL;
     configuration_t activeConfig;
 
     // Sensors
@@ -45,9 +46,6 @@ namespace {
         PUMP_INVERTED
     );
 
-    SemaphoreHandle_t noTempControlValue = NULL;
-    SemaphoreHandle_t noPressureControlValue = NULL;
-    
     // This Semaphore is used as a flag to signal that the thermal runaway protection triggered
     SemaphoreHandle_t TRPTrigger = NULL;
 
@@ -92,17 +90,21 @@ namespace {
 }
 
 
+/*
+* Init function
+*/
+
 void Control::init() {
     if (!initialized) {
+        activeConfigMutex = xSemaphoreCreateMutex();
+        xSemaphoreTake(activeConfigMutex, portMAX_DELAY);
         activeConfig = Storage::loadConfiguration();
+        xSemaphoreGive(activeConfigMutex);
+
         temperatureController->setPIDCoefs(activeConfig.temperaturePIDCoefs);
         pressureController->setPIDCoefs(activeConfig.pressurePIDCoefs);
-        pump->activate();
-        
-        noTempControlValue = xSemaphoreCreateBinary();
-        noPressureControlValue = xSemaphoreCreateBinary();
 
-        TRPTrigger = xSemaphoreCreateBinary();
+        pump->activate();
 
         xTaskCreate(
             vTaskUpdate,
@@ -114,6 +116,8 @@ void Control::init() {
         );
 
         if (DO_THERMAL_RUNAWAY_PROTECTION) {
+            TRPTrigger = xSemaphoreCreateBinary();
+
             xTaskCreate(
                 vTaskTRP,
                 "THERMAL RUNAWAY PROTECTION",
@@ -146,7 +150,13 @@ float Control::getSmoothedPressure() {
 }
 
 configuration_t Control::getActiveConfiguration() {
-    return activeConfig;
+    configuration_t config;
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
+    config = activeConfig;
+    xSemaphoreGive(activeConfigMutex);
+    return config;
 }
 
 bool Control::temperatureAnomalyDetected() {
@@ -155,11 +165,11 @@ bool Control::temperatureAnomalyDetected() {
 
 // Mutators
 void Control::turnOnHeater() {
-    heaterBlock->activate();
+    heaterBlock->activate(); // atomic operation so no need to lock
 }
 
 void Control::shutOffHeater() {
-    heaterBlock->deactivate();
+    heaterBlock->deactivate(); // also an atomic operation
 }
 
 void Control::setTemperatureTarget(float newTarget) {
@@ -179,38 +189,68 @@ void Control::setFlowTarget(float newTarget) {
 }
 
 void Control::setBrewTemperature(float newValue) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.temps.brew = newValue;
+    xSemaphoreGive(activeConfigMutex);
     Storage::storeBrewTemperature(newValue);
 }
 
 void Control::setSteamTemperature(float newValue) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.temps.steam = newValue;
+    xSemaphoreGive(activeConfigMutex);
     Storage::storeSteamTemperature(newValue);
 }
 
 void Control::setBrewPressure(float newValue) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.pressures.brew = newValue;
+    xSemaphoreGive(activeConfigMutex);
     Storage::storeBrewPressure(newValue);
 }
 
 void Control::setPreinfusionPressure(float newValue) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.pressures.preinfusion = newValue;
+    xSemaphoreGive(activeConfigMutex);
     Storage::storePreinfusionPressure(newValue);
 }
 
 void Control::setPreinfusionTime(uint16_t newValue) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.preinfusionTime = newValue;
+    xSemaphoreGive(activeConfigMutex);
     Storage::storePreinfusionTime(newValue);
 }
 
 void Control::setTemperaturePIDCoefs(pidCoefs_t newCoefs) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.temperaturePIDCoefs = newCoefs;
+    xSemaphoreGive(activeConfigMutex);
+    
     temperatureController->setPIDCoefs(newCoefs);
     Storage::storeTemperaturePIDCoefs(newCoefs);
 }
 
 void Control::setPressurePIDCoefs(pidCoefs_t newCoefs) {
+    if(xSemaphoreTake(activeConfigMutex, 10) == pdFALSE) {
+        throw std::__throw_runtime_error;
+    }
     activeConfig.pressurePIDCoefs = newCoefs;
+    xSemaphoreGive(activeConfigMutex);
+
     pressureController->setPIDCoefs(newCoefs);
     Storage::storePressurePIDCoefs(newCoefs);
 }
@@ -236,29 +276,18 @@ void Control::vTaskUpdate(void * parameters) {
 
         // Update controllers
         temperatureController->setInput(temperatureSensor->getSmoothedValue());
-        try {
-            temperatureController->getControlValue(&tempControlValue);
-            heaterBlock->setPowerLevel(tempControlValue);
-            xSemaphoreTake(noTempControlValue, 0);
-        } catch (std::exception e) {
-            xSemaphoreGive(noTempControlValue);
-        }
-
+        temperatureController->getControlValue(&tempControlValue);
+        heaterBlock->setPowerLevel(tempControlValue);
 
         if (controlMode == PumpControlMode::PRESSURE) {
             pressureController->setInput(pressureSensor->getSmoothedValue());
-            try {
-                pressureController->getControlValue(&pressureControlValue);
-                if(pressureControlValue > 0) {
-                    pump->setPowerLevel(pressureControlValue);
-                    pumpMaster->activate();
-                } else {
-                    pump->setPowerLevel(0.0f);
-                    pumpMaster->deactivate();
-                }
-                xSemaphoreTake(noPressureControlValue, 0);
-            } catch (std::exception e) {
-                xSemaphoreGive(noPressureControlValue);
+            pressureController->getControlValue(&pressureControlValue);
+            if(pressureControlValue > 0) {
+                pump->setPowerLevel(pressureControlValue);
+                pumpMaster->activate();
+            } else {
+                pump->setPowerLevel(0.0f);
+                pumpMaster->deactivate();
             }
         } else if (controlMode == PumpControlMode::FLOW) {
             // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
@@ -275,10 +304,6 @@ String Control::status() {
     status += "Temperature sensor:\n";
     status += temperatureSensor->status();
     status += "\nTemperature controller:\n";
-    if(xSemaphoreTake(noTempControlValue, 0) == pdTRUE) {
-        status += "NO CONTROL VALUE\n"; 
-        xSemaphoreGive(noTempControlValue);
-    }
     status += temperatureController->status();
     status += "\nHeater Block:\n";
     status += heaterBlock->status();
@@ -286,10 +311,6 @@ String Control::status() {
     status += "\nPressure sensor:\n";
     status += pressureSensor->status();
     status += "\nPressure controller:\n";
-    if(xSemaphoreTake(noPressureControlValue, 0) == pdTRUE) {
-        status += "NO CONTROL VALUE\n"; 
-        xSemaphoreGive(noPressureControlValue);
-    }
     status += pressureController->status();
     status += "\nPump:\n";
     status += (String)"Master: " + (pumpMaster->getState() ? "ON" : "OFF") + "\n";

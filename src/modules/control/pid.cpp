@@ -31,15 +31,11 @@ PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
 // Accessors
 
 void PID::getControlTarget(float * controlTarget) {
-    if(xQueuePeek(controlTargetQueue, controlTarget, 0) == pdFALSE) {
-        throw std::__throw_runtime_error;
-    }
+    if (xQueuePeek(controlTargetQueue, controlTarget, 0) == pdFALSE) *controlTarget = 0.0;
 }
 
 void PID::getControlValue(float * controlValue) {
-    if(xQueuePeek(controlValueQueue, controlValue, 0) == pdFALSE) {
-        throw std::__throw_runtime_error;
-    }
+    if(xQueuePeek(controlValueQueue, controlValue, 0) == pdFALSE) *controlValue = 0.0;
 }
 
 
@@ -53,6 +49,7 @@ void PID::setPIDCoefs(pidCoefs_t newCoefs) {
 
 void PID::setControlTarget(float newControlTarget) {
     xQueueOverwrite(controlTargetQueue, &newControlTarget);
+    resetIntegral();
 }
 
 void PID::setInput(float newInput) {
@@ -68,7 +65,7 @@ void PID::vTaskUpdate(void * parameters) {
     float error, lastError, derivative, integral;
     pidCoefs_t pidCoefs = {0.0f, 0.0f, 0.0f};
 
-    controlTarget = input = controlValue = 0.0;
+    input = controlValue = 0.0;
     error = derivative = integral = 0.0;
 
     for ( ;; ) {
@@ -77,58 +74,52 @@ void PID::vTaskUpdate(void * parameters) {
             lastError = 0;
         }
 
-        xQueuePeek(pid->controlTargetQueue, &controlTarget, 0);
-        xQueuePeek(pid->inputQueue, &input, 0);
+        if(xQueuePeek(pid->controlTargetQueue, &controlTarget, 0) == pdTRUE) {
+            xQueuePeek(pid->inputQueue, &input, 0);
 
-        error = controlTarget - input;
+            error = controlTarget - input;
 
-        if(abs(error) < pid->condIntegralMargin) {
-            integral += error * pid->dt;
-        } else {
-            integral = 0;
+            if(abs(error) < pid->condIntegralMargin) {
+                integral += error * pid->dt;
+            } else {
+                integral = 0;
+            }
+            
+            derivative = (error - lastError) * pid->dt;
+
+            xQueuePeek(pid->pidCoefsQueue, &pidCoefs, 0);
+
+            controlValue = 
+                pidCoefs.kp * error + 
+                pidCoefs.ki * integral +
+                pidCoefs.kd * derivative;
+
+            xQueueOverwrite(pid->controlValueQueue, &controlValue);
+
+
+            lastError = error;
+
+            xQueueOverwrite(pid->lastErrorQueue, &lastError);
+            xQueueOverwrite(pid->integralQueue, &integral);
         }
-        
-        derivative = (error - lastError) * pid->dt;
-
-        xQueuePeek(pid->pidCoefsQueue, &pidCoefs, 0);
-
-        controlValue = 
-            pidCoefs.kp * error + 
-            pidCoefs.ki * integral +
-            pidCoefs.kd * derivative;
-
-        xQueueOverwrite(pid->controlValueQueue, &controlValue);
-
-
-        lastError = error;
-
-        xQueueOverwrite(pid->lastErrorQueue, &lastError);
-        xQueueOverwrite(pid->integralQueue, &integral);
 
         vTaskDelay(pdMS_TO_TICKS(pid->period));
     }
 };
 
-void PID::reset() {
+void PID::resetIntegral() {
     xSemaphoreGive(resetSemaphore);
 }
 
 String PID::status() {
-    float controlTarget, input, controlValue, lastError, integral;
+    float controlTarget, controlValue, lastError, integral;
     pidCoefs_t pidCoefs;
 
-    xQueuePeek(controlTargetQueue, &controlTarget, pdMS_TO_TICKS(10));
-    xQueuePeek(pidCoefsQueue, &pidCoefs, pdMS_TO_TICKS(10));
-    xQueuePeek(inputQueue, &input, pdMS_TO_TICKS(10));
-    xQueuePeek(lastErrorQueue, &lastError, pdMS_TO_TICKS(10));
-    xQueuePeek(integralQueue, &integral, pdMS_TO_TICKS(10));
-    xQueuePeek(controlValueQueue, &controlValue, pdMS_TO_TICKS(10));
-
     String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(taskHandle)) +
-        "\nControl Target:\t " + String(controlTarget) +
-        "\nCoefficients:\t (p " + String(pidCoefs.kp) + ", i " + String(pidCoefs.ki) + ", d " + String(pidCoefs.kd) + ")" +
-        "\nError:\t\t\t " + String(lastError) +
-        "\nIntegral:\t\t " + String(integral) +
-        "\nControl Value:\t " + String(controlValue) + "\n";
+        "\nControl Target:\t" + (xQueuePeek(controlTargetQueue, &controlTarget, 10) == pdTRUE ? String(controlTarget) : "Queue empty!") +
+        "\nCoefficients:\t" +  (xQueuePeek(pidCoefsQueue, &pidCoefs, 10) == pdTRUE ? "(p " + String(pidCoefs.kp) + ", i " + String(pidCoefs.ki) + ", d " + String(pidCoefs.kd) + ")" : "Queue empty!") +
+        "\nError:\t\t\t" + (xQueuePeek(lastErrorQueue, &lastError, 10) == pdTRUE ? String(lastError) : "Queue empty!") +
+        "\nIntegral:\t\t" + (xQueuePeek(integralQueue, &integral, 10) == pdTRUE ? String(integral) : "Queue empty!") +
+        "\nControl Value:\t" + (xQueuePeek(controlValueQueue, &controlValue, 10) == pdTRUE ? String(controlValue) : "Queue empty!") + "\n";
     return status;
 }
