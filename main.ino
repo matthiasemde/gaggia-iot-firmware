@@ -26,6 +26,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 uint32_t lastStatusUpdate = 0;
 
 void vTaskStatusUpdate(void *pvParameters) {
+    TickType_t lastWakeTime = xTaskGetTickCount();
     for( ;; ) {
         Serial.println("\n/////////////// Status update ///////////////\nat " + timeClient.getFormattedTime());
         Serial.println("Total remaining heap: " + String(xPortGetFreeHeapSize()));
@@ -33,7 +34,7 @@ void vTaskStatusUpdate(void *pvParameters) {
         Serial.println("\n///////// FSM status /////////\n" + FSM::status());
         Serial.println("\n///////// Control status /////////\n" + Control::status());
         Serial.println("\n/////////    IO status   /////////\n" + IO::status());
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(5000));
     }
 }
 

@@ -68,6 +68,8 @@ void PID::vTaskUpdate(void * parameters) {
     input = controlValue = 0.0;
     error = derivative = integral = 0.0;
 
+    TickType_t lastWakeTime = xTaskGetTickCount();
+
     for ( ;; ) {
         if(xSemaphoreTake(pid->resetSemaphore, 0) == pdTRUE) {
             integral = 0;
@@ -103,7 +105,7 @@ void PID::vTaskUpdate(void * parameters) {
             xQueueOverwrite(pid->integralQueue, &integral);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(pid->period));
+        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(pid->period));
     }
 };
 

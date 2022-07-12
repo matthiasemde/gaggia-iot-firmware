@@ -43,6 +43,7 @@ TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingC
         SPI_DO_PIN,
         SPI_CLK_PIN
     );
+    this->maxBoard->enable50Hz(true);
     this->maxBoard->begin(MAX31865_3WIRE);
 }
 

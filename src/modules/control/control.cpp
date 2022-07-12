@@ -53,6 +53,8 @@ namespace {
        
     void vTaskTRP(void* parameters) {
         float temperature, diffToTarget = 0.0, lastDiffToTarget = 0.0, controlTarget = 0.0;
+
+        TickType_t lastWakeTime = xTaskGetTickCount();
         for( ;; ) {            
             if(temperatureSensor->faultDetected()) {
                 xSemaphoreGive(TRPTrigger);
@@ -84,7 +86,7 @@ namespace {
 
             lastDiffToTarget = diffToTarget;
 
-            vTaskDelay(pdMS_TO_TICKS(TRP_INTERVAL * 1000));
+            vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(TRP_INTERVAL * 1000));
         }
     } 
 }
@@ -269,6 +271,8 @@ void Control::closeSolenoid() {
 void Control::vTaskUpdate(void * parameters) {
     float tempControlValue = 0.0, pressureControlValue = 0.0;
 
+    TickType_t lastWakeTime = xTaskGetTickCount();
+
     for( ;; ) {
         // Update sensors
         temperatureSensor->update();
@@ -297,7 +301,7 @@ void Control::vTaskUpdate(void * parameters) {
             // }
         }
         
-        vTaskDelay(pdMS_TO_TICKS(CONTROL_TASK_DELAY));
+        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(CONTROL_TASK_DELAY));
     }
 }
 

@@ -52,6 +52,8 @@ state_t FSM::getState() {
 }
 
 void FSM::vTaskUpdate(void * parameters) {
+    TickType_t lastWakeTime = xTaskGetTickCount();
+
     for( ;; ) {
         buttonState_t buttonState = IO::getButtonState();
 
@@ -120,7 +122,7 @@ void FSM::vTaskUpdate(void * parameters) {
                 else if (buttonState.pump) // TODO: figure out what to do here ¯\_(ツ)_/¯
                 break;
         }
-        vTaskDelay(pdMS_TO_TICKS(FSM_TASK_DELAY));
+        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(FSM_TASK_DELAY));
     }
 }
 
