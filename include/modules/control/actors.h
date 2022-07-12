@@ -18,6 +18,7 @@ private:
     BinaryActorState state;
     gpio_num_t controlPin;
     bool inverted;
+    SemaphoreHandle_t mutex;
 public:
     BinaryActor(gpio_num_t controlPin, bool inverted = false, BinaryActorState initialState = INACTIVE);
     uint8_t getState();

@@ -10,8 +10,8 @@ namespace {
     configuration_t activeConfig;
 
     // Sensors
-    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefsficient);
-    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefsficient);
+    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
+    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient);
     Sensor* sensors[2] = {
         (Sensor*)temperatureSensor,
         (Sensor*)pressureSensor

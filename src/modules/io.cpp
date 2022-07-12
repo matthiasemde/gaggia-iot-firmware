@@ -32,28 +32,22 @@ namespace {
         // {false, 2, NOTE_F, 4},
     };
 
-    esp_timer_handle_t tuneTimerHandle;
-    esp_timer_cb_t tuneTimerCallback = [](void* arg) {
+    TimerHandle_t tuneTimerHandle;
+    void tuneTimerCallback(TimerHandle_t xTimer) {
         if (tuneIndex < sizeof(tune) / sizeof(beat_t)) {
             if(tune[tuneIndex].pause) {
                 ledcWrite(PIEZO_CHANNEL, 0);
             } else {
                 ledcWriteNote(PIEZO_CHANNEL, tune[tuneIndex].note, tune[tuneIndex].octave);
             }
-            esp_timer_start_once(tuneTimerHandle, tune[tuneIndex].duration * (uint64_t) 4e5);
             tuneIndex++;
         } else {
             ledcDetachPin(PIEZO);
-            esp_timer_delete(tuneTimerHandle);
+            if(xTimerDelete(xTimer, 10) == pdFAIL) {
+                Serial.println("Failed to delete tune timer"); throw std::__throw_runtime_error;
+            }
             xSemaphoreGive(piezoSemaphore);
         }
-    };
-
-    esp_timer_create_args_t tuneTimerArgs = {
-        tuneTimerCallback,
-        NULL,
-        ESP_TIMER_TASK,
-        "TuneTimer"
     };
 
     // Define the volatile variables which are changed by the button ISRs
@@ -63,8 +57,15 @@ namespace {
     volatile bool pumpButtonState = false;
     volatile bool steamButtonState = false;
 
+    SemaphoreHandle_t pbDebounceSemaphore = NULL;
     void IRAM_ATTR powerButtonISR() {
-        powerButtonFlag = true;
+        BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
+        if(xSemaphoreTakeFromISR(pbDebounceSemaphore, &pxHigherPriorityTaskWoken) == pdTRUE) {
+            powerButtonFlag = true;
+        }
+        if(pxHigherPriorityTaskWoken == pdTRUE) {
+            portYIELD_FROM_ISR();
+        }
     }
 
     void IRAM_ATTR pumpButtonISR() {
@@ -74,6 +75,11 @@ namespace {
     void IRAM_ATTR steamButtonISR() {
         steamButtonState = !digitalRead(STEAM_BUTTON);
     }
+
+    TimerHandle_t pbDebounceTimerHandle = NULL;
+    void pbDebounceTimerCallback(TimerHandle_t xTimer) {
+        xSemaphoreGive(pbDebounceSemaphore);
+    };
 
     auto powerButtonLED = new BinaryActor(POWER_BUTTON_LIGHT);
     auto pumpButtonLED = new BinaryActor(PUMP_BUTTON_LIGHT);
@@ -95,6 +101,21 @@ void IO::init() {
     pumpButtonState = !digitalRead(PUMP_BUTTON);
     steamButtonState = !digitalRead(STEAM_BUTTON);
 
+    pbDebounceSemaphore = xSemaphoreCreateBinary();
+    xSemaphoreGive(pbDebounceSemaphore);
+
+    pbDebounceTimerHandle = xTimerCreate(
+        "pbDebounceTimer",      // human readable name
+        pdMS_TO_TICKS(1000),    // delay in system ticks
+        pdFALSE,                // single shot timer
+        (void*) 1,              // unique timer id
+        pbDebounceTimerCallback // callback function
+    );
+
+    if(pbDebounceTimerHandle == NULL) {
+        Serial.println("Failed to create pbDebounceTimer"); throw std::__throw_runtime_error;
+    }
+
     attachInterrupt(POWER_BUTTON, powerButtonISR, FALLING);
     attachInterrupt(PUMP_BUTTON, pumpButtonISR, CHANGE);
     attachInterrupt(STEAM_BUTTON, steamButtonISR, CHANGE);
@@ -103,9 +124,17 @@ void IO::init() {
 void IO::sayHello() {
     if (xSemaphoreTake(piezoSemaphore, 0) == pdTRUE) {
         tuneIndex = 0;
-        esp_timer_create(&tuneTimerArgs, &tuneTimerHandle);
+        tuneTimerHandle = xTimerCreate(
+            "tuneTimer",
+            pdMS_TO_TICKS(400),
+            pdTRUE,
+            (void*) 0,
+            tuneTimerCallback
+        );
         ledcAttachPin(PIEZO, 15);
-        esp_timer_start_once(tuneTimerHandle, (uint64_t) 1);
+        if(tuneTimerHandle == NULL || xTimerStart(tuneTimerHandle, 10) == pdFAIL) {
+            Serial.println("Failed to start tune timer"); throw std::__throw_runtime_error;
+        }
     }
 }
 
@@ -144,4 +173,7 @@ String IO::status() {
 
 void IO::clearPowerButton() {
     powerButtonFlag = false;
+    if(xTimerStart(pbDebounceTimerHandle, 10) == pdFAIL) {
+        Serial.println("Failed to start pbDebounceTimer"); throw std::__throw_runtime_error;
+    }
 }

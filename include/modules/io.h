@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "control/actors.h"
+#include "../RTOSconfig.h"
 #include "../config.h"
 
 typedef union {

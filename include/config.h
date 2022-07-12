@@ -14,7 +14,7 @@
 #define TRP_MAX_DIFF_TO_TARGET 0.5f
 #define TRP_INTERVAL 15 // in seconds
 
-#define PIEZO GPIO_NUM_22
+#define PIEZO GPIO_NUM_21
 #define PIEZO_CHANNEL 15
 
 #define POWER_BUTTON GPIO_NUM_14
@@ -23,14 +23,14 @@
 
 #define POWER_BUTTON_LIGHT GPIO_NUM_1
 #define PUMP_BUTTON_LIGHT GPIO_NUM_3
-#define STEAM_BUTTON_LIGHT GPIO_NUM_21
+#define STEAM_BUTTON_LIGHT GPIO_NUM_22
 
 #define SOLENOID_VALVE_PIN GPIO_NUM_33
 #define SOLENOID_INVERTED true
 
 #define HEATER_BLOCK_PIN GPIO_NUM_25
 
-#define PUMP_MASTER_PIN GPIO_NUM_22
+#define PUMP_MASTER_PIN GPIO_NUM_23
 #define PUMP_MASTER_INVERTED true
 
 #define PUMP_PIN GPIO_NUM_32
@@ -47,6 +47,6 @@
 #define PRESSURE_SENSOR_OFFSET 0.2
 #define PRESSURE_SENSOR_SLOPE 0.003366
 
-const float smoothingCoefsficient = 0.5;
+const float smoothingCoefficient = 0.5;
 
 #endif

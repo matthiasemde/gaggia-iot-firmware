@@ -3,12 +3,12 @@
 //// Class Sensor ////
 
 // Constructor
-Sensor::Sensor(String name, float smoothingCoefsficient) {
+Sensor::Sensor(String name, float smoothingCoefficient) {
     this->displayName = name;
     
     this->rawValue = 0;
     this->smoothedValue = 0;
-    this->smoothingCoefsficient = smoothingCoefsficient;
+    this->smoothingCoefficient = smoothingCoefficient;
 }
 
 // Accessors
@@ -26,16 +26,16 @@ void Sensor::setRawValue(float newValue) {
 
     // implement running average
     smoothedValue =
-        smoothedValue * smoothingCoefsficient +
-        newValue * (1-smoothingCoefsficient);
+        smoothedValue * smoothingCoefficient +
+        newValue * (1-smoothingCoefficient);
 }
 
 
 //// Class TemperaturSensor ////
 
 // Constructor
-TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefsficient) 
-: Sensor("Temperature", smoothingCoefsficient) {
+TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient) 
+: Sensor("Temperature", smoothingCoefficient) {
     this->rRef = rRef;
     this->maxBoard = new Adafruit_MAX31865(
         csPin,
@@ -90,8 +90,8 @@ String TemperatureSensor::status() {
 //// Class PressureSensor ////
 
 // Constructor
-PressureSensor::PressureSensor(uint8_t inputPin, float smoothingCoefsficient)
-: Sensor("Pressure", smoothingCoefsficient) {
+PressureSensor::PressureSensor(uint8_t inputPin, float smoothingCoefficient)
+: Sensor("Pressure", smoothingCoefficient) {
     this->inputPin = inputPin;
     this->slope = PRESSURE_SENSOR_SLOPE;
     this->offset = PRESSURE_SENSOR_OFFSET; 

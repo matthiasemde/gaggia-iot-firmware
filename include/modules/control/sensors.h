@@ -10,12 +10,12 @@ class Sensor {
 private:
     float rawValue;
     float smoothedValue;
-    float smoothingCoefsficient;
+    float smoothingCoefficient;
 public:
     String displayName;
     
     // Constructor
-    Sensor(String name, float smoothingCoefsficient);
+    Sensor(String name, float smoothingCoefficient);
 
     // Accessors
     float getRawValue();
@@ -35,7 +35,7 @@ private:
     Adafruit_MAX31865* maxBoard;
     float rRef;
 public:
-    TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefsficient);
+    TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient);
     void update();
     bool faultDetected();
     String status();
@@ -46,7 +46,7 @@ private:
     uint8_t inputPin;
     float offset, slope; // slope and offset to convert analogRead to pressure in Bar
 public:
-    PressureSensor(uint8_t inputPin, float smoothingCoefsficient);
+    PressureSensor(uint8_t inputPin, float smoothingCoefficient);
     void update();
     String status();
 };
