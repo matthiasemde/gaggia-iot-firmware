@@ -1,12 +1,14 @@
 #ifndef __CONFIG__
 #define __CONFIG__
 
-#define MAX_TEMP_TARGET 140
-
-#define TEMP_CS_PIN GPIO_NUM_17
 #define SPI_DI_PIN GPIO_NUM_5
 #define SPI_DO_PIN GPIO_NUM_18
 #define SPI_CLK_PIN GPIO_NUM_19
+
+#define MAX_TEMP_TARGET 140
+
+#define TEMP_CS_PIN GPIO_NUM_17
+#define TEMP_RDY_PIN GPIO_NUM_16
 
 #define TEMP_RREF 430.0
 
@@ -43,10 +45,10 @@
 #define PUMP_PWM_FREQUENCY 1000 // Kemo M150 Pulse Converter requires 1-10 kHz
 
 #define PRESSURE_SENSOR_PIN GPIO_NUM_34
-
+#define PRESSURE_POLL_FREQUENCY 20          // in Hz
 #define PRESSURE_SENSOR_OFFSET 0.2
 #define PRESSURE_SENSOR_SLOPE 0.003366
 
-const float smoothingCoefficient = 0.5;
+const float smoothingCoefficient = 0.8; // 0.0 no smoothing, 0.99 strong smoothing
 
 #endif

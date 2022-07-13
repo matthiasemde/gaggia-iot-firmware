@@ -39,7 +39,7 @@ public:
     void getControlValue(float * controlValue);
     void setPIDCoefs(pidCoefs_t newCoefs);
     void setControlTarget(float newControlTarget);
-    void setInput(float newInput);
+    void setInput(float * newInput);
     void resetIntegral();
     static void vTaskUpdate(void * params);
     String status();

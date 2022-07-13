@@ -6,23 +6,44 @@
 #include "../../config.h"
 #include "pid.h" 
 
+typedef enum {
+    POLL,
+    ISR
+} updateMode_t;
+
 class Sensor {
 private:
-    float rawValue;
-    float smoothedValue;
+    float smoothedValue = 0.0; // smoothed value for updating queue values. do not access from outside
+
+    QueueHandle_t rawValueQueue, smoothedValueQueue;
+
     float smoothingCoefficient;
+    
+    updateMode_t updateMode;
+    
+    uint16_t pollDelay;
+    
+    SemaphoreHandle_t dataReady;
+    gpio_num_t rdyPin;
+    
+    TaskHandle_t taskHandle = NULL;
+
+    void init(String name, float smoothingCoefficient);
 public:
     String displayName;
     
     // Constructor
-    Sensor(String name, float smoothingCoefficient);
+    Sensor(String name, float smoothingCoefficient, uint16_t pollFrequency);
+    Sensor(String name, float smoothingCoefficient, gpio_num_t rdyPin);
 
     // Accessors
-    float getRawValue();
-    float getSmoothedValue();
+    void getRawValue(float * rawValue);
+    void getSmoothedValue(float * smoothedValue);
  
     // Mutators
     void setRawValue(float newValue);
+
+    static void vTaskUpdate(void * params);
 
     // Virtual functions to be implemented by derived classes 
     virtual void update() = 0;
@@ -34,8 +55,10 @@ class TemperatureSensor : public Sensor {
 private:
     Adafruit_MAX31865* maxBoard;
     float rRef;
+    void init(gpio_num_t csPin, float rRef);
 public:
-    TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient);
+    TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, gpio_num_t rdyPin);
+    TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, uint16_t pollFrequency);
     void update();
     bool faultDetected();
     String status();
@@ -43,10 +66,10 @@ public:
 
 class PressureSensor : public Sensor {
 private:
-    uint8_t inputPin;
+    gpio_num_t inputPin;
     float offset, slope; // slope and offset to convert analogRead to pressure in Bar
 public:
-    PressureSensor(uint8_t inputPin, float smoothingCoefficient);
+    PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, uint16_t pollFrequency);
     void update();
     String status();
 };

@@ -31,11 +31,11 @@ PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
 // Accessors
 
 void PID::getControlTarget(float * controlTarget) {
-    if (xQueuePeek(controlTargetQueue, controlTarget, 0) == pdFALSE) *controlTarget = 0.0;
+    if (xQueuePeek(controlTargetQueue, controlTarget, 10) == pdFALSE) *controlTarget = 0.0;
 }
 
 void PID::getControlValue(float * controlValue) {
-    if(xQueuePeek(controlValueQueue, controlValue, 0) == pdFALSE) *controlValue = 0.0;
+    if(xQueuePeek(controlValueQueue, controlValue, 10) == pdFALSE) *controlValue = 0.0;
 }
 
 
@@ -52,8 +52,8 @@ void PID::setControlTarget(float newControlTarget) {
     resetIntegral();
 }
 
-void PID::setInput(float newInput) {
-    xQueueOverwrite(inputQueue, &newInput);
+void PID::setInput(float * newInput) {
+    xQueueOverwrite(inputQueue, newInput);
 }
 
 

@@ -1,41 +1,114 @@
 #include "../../../include/modules/control/sensors.h"
 
+namespace {
+    void IRAM_ATTR dataReadyISR(void * parameters) {
+        SemaphoreHandle_t* dataReady = (SemaphoreHandle_t*)parameters;
+        BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(*dataReady, &pxHigherPriorityTaskWoken);
+        if(pxHigherPriorityTaskWoken == pdTRUE) {
+            portYIELD_FROM_ISR();
+        }
+    }
+}
+
 //// Class Sensor ////
 
 // Constructor
-Sensor::Sensor(String name, float smoothingCoefficient) {
+
+Sensor::Sensor(String name, float smoothingCoefficient, uint16_t pollFrequency) {
+    this->updateMode = POLL;
+    this->pollDelay = 1000/pollFrequency;
+
+    init(name, smoothingCoefficient);
+}
+
+Sensor::Sensor(String name, float smoothingCoefficient, gpio_num_t rdyPin) {
+    this->updateMode = ISR;
+    this->rdyPin = rdyPin;
+    this->dataReady = xSemaphoreCreateBinary();
+    xSemaphoreGive(dataReady); // give semaphore, so the task wont get stuck
+
+    pinMode(rdyPin, INPUT);
+
+    attachInterruptArg(rdyPin, dataReadyISR, (void*) &dataReady, RISING);
+
+    init(name, smoothingCoefficient);
+}
+
+void Sensor::init(String name, float smooothingCoefficient) {
     this->displayName = name;
     
-    this->rawValue = 0;
-    this->smoothedValue = 0;
+    this->rawValueQueue = xQueueCreate(1, sizeof(float));
+    this->smoothedValueQueue = xQueueCreate(1, sizeof(float));
     this->smoothingCoefficient = smoothingCoefficient;
+
+    xTaskCreate(
+        vTaskUpdate,
+        "Sensor",
+        SENSOR_TASK_STACK_SIZE,
+        this,
+        SENSOR_TASK_PRIORITY,
+        &this->taskHandle
+    );
 }
+
 
 // Accessors
-float Sensor::getRawValue() {
-    return rawValue;
+void Sensor::getRawValue(float * rawValue) {
+    xQueuePeek(rawValueQueue, rawValue, 10);
 }
 
-float Sensor::getSmoothedValue() {
-    return smoothedValue;
+void Sensor::getSmoothedValue(float * smoothedValue) {
+    xQueuePeek(smoothedValueQueue, smoothedValue, 10);
 }
 
 // Mutators
 void Sensor::setRawValue(float newValue) {
-    rawValue = newValue;
+    xQueueOverwrite(rawValueQueue, &newValue);
 
     // implement running average
     smoothedValue =
         smoothedValue * smoothingCoefficient +
         newValue * (1-smoothingCoefficient);
+
+    xQueueOverwrite(smoothedValueQueue, &smoothedValue);
 }
 
+void Sensor::vTaskUpdate(void * params) {
+    Sensor * sensor = (Sensor *) params;
+
+    TickType_t lastWakeTime = xTaskGetTickCount();
+
+    for (;;) {
+        switch (sensor->updateMode) {
+            case POLL:
+                sensor->update();
+                vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(sensor->pollDelay));
+                break;
+            case ISR:
+                xSemaphoreTake(sensor->dataReady, portMAX_DELAY);
+                sensor->update();
+                break;
+            default:
+                Serial.println("Invalid update mode"); throw std::__throw_runtime_error;
+        }
+    }
+}
 
 //// Class TemperaturSensor ////
 
 // Constructor
-TemperatureSensor::TemperatureSensor(uint8_t csPin, float rRef, float smoothingCoefficient) 
-: Sensor("Temperature", smoothingCoefficient) {
+TemperatureSensor::TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, gpio_num_t rdyPin) 
+: Sensor("Temperature", smoothingCoefficient, rdyPin) {
+    init(csPin, rRef);
+}
+
+TemperatureSensor::TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, uint16_t pollFrequency) 
+: Sensor("Temperature", smoothingCoefficient, pollFrequency) {
+    init(csPin, rRef);
+}
+
+void TemperatureSensor::init(gpio_num_t csPin, float rRef) {
     this->rRef = rRef;
     this->maxBoard = new Adafruit_MAX31865(
         csPin,
@@ -82,7 +155,11 @@ String TemperatureSensor::status() {
         }
         maxBoard->clearFault();
     }
-    status += "Smoothed value: " + String(getSmoothedValue()) + "\nRaw value: " + String(getRawValue()) + "\n";
+
+    float rawValue, smoothedValue;
+    getSmoothedValue(&smoothedValue);
+    getRawValue(&rawValue);
+    status += "Smoothed value: " + String(smoothedValue) + "\nRaw value: " + String(rawValue) + "\n";
 
     return status;
 }
@@ -91,8 +168,8 @@ String TemperatureSensor::status() {
 //// Class PressureSensor ////
 
 // Constructor
-PressureSensor::PressureSensor(uint8_t inputPin, float smoothingCoefficient)
-: Sensor("Pressure", smoothingCoefficient) {
+PressureSensor::PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, uint16_t pollFrequency)
+: Sensor("Pressure", smoothingCoefficient, pollFrequency) {
     this->inputPin = inputPin;
     this->slope = PRESSURE_SENSOR_SLOPE;
     this->offset = PRESSURE_SENSOR_OFFSET; 
@@ -104,5 +181,8 @@ void PressureSensor::update() {
 }
 
 String PressureSensor::status() {
-    return "Smoothed value: " + String(getSmoothedValue()) + "\nRaw value: " + String(getRawValue()) + "\n";
+    float rawValue, smoothedValue;
+    getSmoothedValue(&smoothedValue);
+    getRawValue(&rawValue);
+    return "Smoothed value: " + String(smoothedValue) + "\nRaw value: " + String(rawValue) + "\n";
 }

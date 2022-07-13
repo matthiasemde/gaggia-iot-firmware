@@ -10,8 +10,8 @@ namespace {
     configuration_t activeConfig;
 
     // Sensors
-    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient);
-    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient);
+    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient, TEMP_RDY_PIN);
+    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient, PRESSURE_POLL_FREQUENCY);
     Sensor* sensors[2] = {
         (Sensor*)temperatureSensor,
         (Sensor*)pressureSensor
@@ -60,7 +60,7 @@ namespace {
                 xSemaphoreGive(TRPTrigger);
             }
             
-            temperature = temperatureSensor->getSmoothedValue();
+            temperatureSensor->getSmoothedValue(&temperature);
 
             try {
                 temperatureController->getControlTarget(&controlTarget);
@@ -68,7 +68,7 @@ namespace {
                 controlTarget = 0.0;
             }
 
-            diffToTarget = controlTarget - temperatureSensor->getSmoothedValue();
+            diffToTarget = controlTarget - temperature;
 
             // if the temperature or control target are negative, something is wrong
             if(temperature < 0 || controlTarget < 0) {
@@ -138,19 +138,27 @@ void Control::init() {
 
 // Accessors
 float Control::getRawTemperature() {
-    return temperatureSensor->getRawValue();    
+    float value;
+    temperatureSensor->getRawValue(&value);
+    return value;    
 }
 
 float Control::getSmoothedTemperature() {
-    return temperatureSensor->getSmoothedValue();    
+    float value;
+    temperatureSensor->getSmoothedValue(&value);
+    return value;
 }
 
 float Control::getRawPressure() {
-    return pressureSensor->getRawValue();
+    float value;
+    pressureSensor->getRawValue(&value);
+    return value;
 }
 
 float Control::getSmoothedPressure() {
-    return pressureSensor->getSmoothedValue();
+    float value;
+    pressureSensor->getSmoothedValue(&value);
+    return value;
 }
 
 configuration_t Control::getActiveConfiguration() {
@@ -269,24 +277,24 @@ void Control::closeSolenoid() {
 
 // Update function needs be called each loop
 void Control::vTaskUpdate(void * parameters) {
+    float temperature = 0.0, pressure = 0.0;
     float tempControlValue = 0.0, pressureControlValue = 0.0;
 
     TickType_t lastWakeTime = xTaskGetTickCount();
 
     for( ;; ) {
-        // Update sensors
-        temperatureSensor->update();
-        pressureSensor->update();
+        // Update sensors readings
+        temperatureSensor->getSmoothedValue(&temperature);
+        pressureSensor->getSmoothedValue(&pressure);
         // flowSensor->update();
 
-
         // Update controllers
-        temperatureController->setInput(temperatureSensor->getSmoothedValue());
+        temperatureController->setInput(&temperature); // this can be done by the controller itself
         temperatureController->getControlValue(&tempControlValue);
         heaterBlock->setPowerLevel(tempControlValue);
 
         if (controlMode == PumpControlMode::PRESSURE) {
-            pressureController->setInput(pressureSensor->getSmoothedValue());
+            pressureController->setInput(&pressure);
             pressureController->getControlValue(&pressureControlValue);
             if(pressureControlValue > 0) {
                 pump->setPowerLevel(pressureControlValue);
