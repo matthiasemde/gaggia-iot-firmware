@@ -23,7 +23,6 @@ private:
     
     uint16_t pollDelay;
     
-    SemaphoreHandle_t dataReady;
     gpio_num_t rdyPin;
     
     TaskHandle_t taskHandle = NULL;

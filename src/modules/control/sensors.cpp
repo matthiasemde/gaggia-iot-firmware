@@ -2,11 +2,13 @@
 
 namespace {
     void IRAM_ATTR dataReadyISR(void * parameters) {
-        SemaphoreHandle_t* dataReady = (SemaphoreHandle_t*)parameters;
-        BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
-        xSemaphoreGiveFromISR(*dataReady, &pxHigherPriorityTaskWoken);
-        if(pxHigherPriorityTaskWoken == pdTRUE) {
-            portYIELD_FROM_ISR();
+        TaskHandle_t* xHandle = (TaskHandle_t*)parameters;
+        if(*xHandle != NULL) {
+            BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
+            vTaskNotifyGiveFromISR(*xHandle, &pxHigherPriorityTaskWoken);
+            if(pxHigherPriorityTaskWoken == pdTRUE) {
+               portYIELD_FROM_ISR();
+            }
         }
     }
 }
@@ -25,12 +27,10 @@ Sensor::Sensor(String name, float smoothingCoefficient, uint16_t pollFrequency) 
 Sensor::Sensor(String name, float smoothingCoefficient, gpio_num_t rdyPin) {
     this->updateMode = ISR;
     this->rdyPin = rdyPin;
-    this->dataReady = xSemaphoreCreateBinary();
-    xSemaphoreGive(dataReady); // give semaphore, so the task wont get stuck
 
     pinMode(rdyPin, INPUT);
 
-    attachInterruptArg(rdyPin, dataReadyISR, (void*) &dataReady, RISING);
+    attachInterruptArg(rdyPin, dataReadyISR, (void*) &this->taskHandle, RISING);
 
     init(name, smoothingCoefficient);
 }
@@ -86,7 +86,7 @@ void Sensor::vTaskUpdate(void * params) {
                 vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(sensor->pollDelay));
                 break;
             case ISR:
-                xSemaphoreTake(sensor->dataReady, portMAX_DELAY);
+                ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(500));
                 sensor->update();
                 break;
             default:
