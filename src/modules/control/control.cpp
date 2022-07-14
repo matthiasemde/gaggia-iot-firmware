@@ -10,16 +10,26 @@ namespace {
     configuration_t activeConfig;
 
     // Sensors
-    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, smoothingCoefficient, TEMP_RDY_PIN);
-    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, smoothingCoefficient, PRESSURE_POLL_FREQUENCY);
+    auto temperatureSensor = new TemperatureSensor(TEMP_CS_PIN, TEMP_RREF, TEMP_SMOOTHING_COEFFICIENT, TEMP_RDY_PIN);
+    auto pressureSensor = new PressureSensor(PRESSURE_SENSOR_PIN, PRESSURE_SMOOTHING_COEFFICIENT, 0.01);
     Sensor* sensors[2] = {
         (Sensor*)temperatureSensor,
         (Sensor*)pressureSensor
     };
 
     // Controllers
-    auto temperatureController = new PID(-1.0, 100, 5.0f);
-    auto pressureController = new PID(-1.0, 100, 0.5f);
+    auto temperatureController = new PID(
+        [](float * input) { Control::getSmoothedTemperature(input); },
+        [](float * controlValue) { Control::setHeaterPower(controlValue); },
+        100,
+        5.0f
+    );
+    auto pressureController = new PID(
+        [](float * input) { Control::getSmoothedPressure(input); },
+        [](float * controlValue) { Control::setPumpPower(controlValue); },
+        100,
+        0.5f
+    );
     // auto flowController = new PID(kp, ki, kd, 0, 100);
     PID* controllers[2] = {
         temperatureController,
@@ -41,16 +51,14 @@ namespace {
         PUMP_PIN,
         PUMP_PWM_CHANNEL,
         PUMP_PWM_FREQUENCY,
-        0.1f,
-        0.9f,
+        PUMP_PWM_MIN_DUTY_CYCLE,
+        PUMP_PWM_MAX_DUTY_CYCLE,
         PUMP_INVERTED
     );
 
     // This Semaphore is used as a flag to signal that the thermal runaway protection triggered
     SemaphoreHandle_t TRPTrigger = NULL;
 
-    TaskHandle_t xHandle = NULL;
-       
     void vTaskTRP(void* parameters) {
         float temperature, diffToTarget = 0.0, lastDiffToTarget = 0.0, controlTarget = 0.0;
 
@@ -110,15 +118,6 @@ void Control::init() {
 
         pump->activate();
 
-        xTaskCreate(
-            vTaskUpdate,
-            "CONTROL",
-            CONTROL_TASK_STACK_SIZE,
-            NULL,
-            CONTROL_TASK_PRIORITY,
-            &xHandle
-        );
-
         if (DO_THERMAL_RUNAWAY_PROTECTION) {
             TRPTrigger = xSemaphoreCreateBinary();
 
@@ -137,28 +136,20 @@ void Control::init() {
 }
 
 // Accessors
-float Control::getRawTemperature() {
-    float value;
-    temperatureSensor->getRawValue(&value);
-    return value;    
+void Control::getRawTemperature(float * value) {
+    temperatureSensor->getRawValue(value);
 }
 
-float Control::getSmoothedTemperature() {
-    float value;
-    temperatureSensor->getSmoothedValue(&value);
-    return value;
+void Control::getSmoothedTemperature(float * value) {
+    temperatureSensor->getSmoothedValue(value);
 }
 
-float Control::getRawPressure() {
-    float value;
-    pressureSensor->getRawValue(&value);
-    return value;
+void Control::getRawPressure(float * value) {
+    pressureSensor->getRawValue(value);
 }
 
-float Control::getSmoothedPressure() {
-    float value;
-    pressureSensor->getSmoothedValue(&value);
-    return value;
+void Control::getSmoothedPressure(float * value) {
+    pressureSensor->getSmoothedValue(value);
 }
 
 configuration_t Control::getActiveConfiguration() {
@@ -182,6 +173,21 @@ void Control::turnOnHeater() {
 
 void Control::shutOffHeater() {
     heaterBlock->deactivate(); // also an atomic operation
+}
+
+void Control::setHeaterPower(float * powerLevel) {
+    heaterBlock->setPowerLevel(powerLevel);
+}
+
+void Control::setPumpPower(float * powerLevel) {
+    if(*powerLevel > 0) {
+        pump->setPowerLevel(powerLevel);
+        pumpMaster->activate();
+    } else {
+        pumpMaster->deactivate();
+        float zeroLevel = 0.0f;
+        pump->setPowerLevel(&zeroLevel);
+    }
 }
 
 void Control::setTemperatureTarget(float newTarget) {
@@ -275,46 +281,8 @@ void Control::closeSolenoid() {
     solenoidValve->deactivate();
 }
 
-// Update function needs be called each loop
-void Control::vTaskUpdate(void * parameters) {
-    float temperature = 0.0, pressure = 0.0;
-    float tempControlValue = 0.0, pressureControlValue = 0.0;
-
-    TickType_t lastWakeTime = xTaskGetTickCount();
-
-    for( ;; ) {
-        // Update sensors readings
-        temperatureSensor->getSmoothedValue(&temperature);
-        pressureSensor->getSmoothedValue(&pressure);
-        // flowSensor->update();
-
-        // Update controllers
-        temperatureController->setInput(&temperature); // this can be done by the controller itself
-        temperatureController->getControlValue(&tempControlValue);
-        heaterBlock->setPowerLevel(tempControlValue);
-
-        if (controlMode == PumpControlMode::PRESSURE) {
-            pressureController->setInput(&pressure);
-            pressureController->getControlValue(&pressureControlValue);
-            if(pressureControlValue > 0) {
-                pump->setPowerLevel(pressureControlValue);
-                pumpMaster->activate();
-            } else {
-                pump->setPowerLevel(0.0f);
-                pumpMaster->deactivate();
-            }
-        } else if (controlMode == PumpControlMode::FLOW) {
-            // if (flowController->update(flowSensor->getSmoothedValue(), &nextControlValue)) {
-            //     pump->setPowerLevel(nextControlValue);
-            // }
-        }
-        
-        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(CONTROL_TASK_DELAY));
-    }
-}
-
 String Control::status() {
-    String status = "Remaining stack size: " + String(uxTaskGetStackHighWaterMark(xHandle)) + "\n";
+    String status = "";
     status += "Temperature sensor:\n";
     status += temperatureSensor->status();
     status += "\nTemperature controller:\n";

@@ -18,9 +18,14 @@ void InfoRouter::attach(WebServer* server, NTPClient* timeClient) {
     server->on("/info/sensors", HTTP_GET, [server, timeClient]() {
         DynamicJsonDocument res(1024);
 
+        float temperature, pressure;
+
+        Control::getSmoothedTemperature(&temperature);
+        Control::getSmoothedTemperature(&pressure);
+
         res["time"] = timeClient->getEpochTime();
-        res["temperature"] = Control::getRawTemperature();
-        res["pressure"] = 7.64;
+        res["temperature"] = temperature;
+        res["pressure"] = pressure;
 
         uint8_t resLength = measureJsonPretty(res);
         char *buf = (char*) malloc(resLength * sizeof(char));

@@ -17,9 +17,9 @@ namespace {
 
 // Constructor
 
-Sensor::Sensor(String name, float smoothingCoefficient, uint16_t pollFrequency) {
+Sensor::Sensor(String name, float smoothingCoefficient, float pollFrequency) {
     this->updateMode = POLL;
-    this->pollDelay = 1000/pollFrequency;
+    this->pollDelay = (uint16_t) 1000/pollFrequency;
 
     init(name, smoothingCoefficient);
 }
@@ -40,7 +40,7 @@ void Sensor::init(String name, float smooothingCoefficient) {
     
     this->rawValueQueue = xQueueCreate(1, sizeof(float));
     this->smoothedValueQueue = xQueueCreate(1, sizeof(float));
-    this->smoothingCoefficient = smoothingCoefficient;
+    this->smoothingCoefficient = smooothingCoefficient;
 
     xTaskCreate(
         vTaskUpdate,
@@ -67,7 +67,7 @@ void Sensor::setRawValue(float newValue) {
     xQueueOverwrite(rawValueQueue, &newValue);
 
     // implement running average
-    smoothedValue =
+    smoothedValue = 
         smoothedValue * smoothingCoefficient +
         newValue * (1-smoothingCoefficient);
 
@@ -103,7 +103,7 @@ TemperatureSensor::TemperatureSensor(gpio_num_t csPin, float rRef, float smoothi
     init(csPin, rRef);
 }
 
-TemperatureSensor::TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, uint16_t pollFrequency) 
+TemperatureSensor::TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, float pollFrequency) 
 : Sensor("Temperature", smoothingCoefficient, pollFrequency) {
     init(csPin, rRef);
 }
@@ -168,7 +168,7 @@ String TemperatureSensor::status() {
 //// Class PressureSensor ////
 
 // Constructor
-PressureSensor::PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, uint16_t pollFrequency)
+PressureSensor::PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, float pollFrequency)
 : Sensor("Pressure", smoothingCoefficient, pollFrequency) {
     this->inputPin = inputPin;
     this->slope = PRESSURE_SENSOR_SLOPE;

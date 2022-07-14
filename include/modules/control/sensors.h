@@ -32,7 +32,7 @@ public:
     String displayName;
     
     // Constructor
-    Sensor(String name, float smoothingCoefficient, uint16_t pollFrequency);
+    Sensor(String name, float smoothingCoefficient, float pollFrequency);
     Sensor(String name, float smoothingCoefficient, gpio_num_t rdyPin);
 
     // Accessors
@@ -57,7 +57,7 @@ private:
     void init(gpio_num_t csPin, float rRef);
 public:
     TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, gpio_num_t rdyPin);
-    TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, uint16_t pollFrequency);
+    TemperatureSensor(gpio_num_t csPin, float rRef, float smoothingCoefficient, float pollFrequency);
     void update();
     bool faultDetected();
     String status();
@@ -68,7 +68,7 @@ private:
     gpio_num_t inputPin;
     float offset, slope; // slope and offset to convert analogRead to pressure in Bar
 public:
-    PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, uint16_t pollFrequency);
+    PressureSensor(gpio_num_t inputPin, float smoothingCoefficient, float pollFrequency);
     void update();
     String status();
 };

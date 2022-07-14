@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include "../../RTOSConfig.h"
 
+typedef void (*passValue_t)(float * value);
+
 typedef struct {
     float kp, ki, kd;
 } pidCoefs_t;
@@ -15,13 +17,12 @@ private:
 
     TaskHandle_t taskHandle; // handle to task
 
-    QueueHandle_t lastErrorQueue;
-    QueueHandle_t integralQueue;
+    passValue_t getInput, setControlValue; // pointers to functions to getInput and set control value
+
+    QueueHandle_t lastErrorQueue, integralQueue;
 
     QueueHandle_t controlTargetQueue; // queue for passing control target values
-    QueueHandle_t inputQueue; // queue for passing input values
     QueueHandle_t controlValueQueue; // queue for passing control value values
-
     QueueHandle_t pidCoefsQueue; // queue holding coeficients for P-, I- and D-term
 
     SemaphoreHandle_t resetSemaphore; // semaphore for resetting integral
@@ -31,7 +32,8 @@ private:
     float condIntegralMargin;
 public:
     PID(
-        float controlTarget,
+        passValue_t getInput,
+        passValue_t setControlValue,
         uint16_t period,
         float condIntegralMargin
     );
@@ -39,7 +41,6 @@ public:
     void getControlValue(float * controlValue);
     void setPIDCoefs(pidCoefs_t newCoefs);
     void setControlTarget(float newControlTarget);
-    void setInput(float * newInput);
     void resetIntegral();
     static void vTaskUpdate(void * params);
     String status();

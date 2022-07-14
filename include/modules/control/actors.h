@@ -45,7 +45,7 @@ public:
         float maxOut = 1.0,
         bool inverted = false
     );
-    void setPowerLevel(float newPwmLevel);
+    void setPowerLevel(float * newPowerLevel);
     void activate();
     void deactivate();
     String status();

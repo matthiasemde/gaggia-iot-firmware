@@ -1,21 +1,28 @@
 #include "../../../include/modules/control/pid.h"
 
-PID::PID(float controlTarget, uint16_t period, float condIntegralMargin) {
+PID::PID(
+    void (*getInput)(float* input),
+    void (*setControlValue)(float* controlValue),
+    uint16_t period,
+    float condIntegralMargin
+) {
+    this->getInput = getInput;
+    this->setControlValue = setControlValue;
+
+    this->period = period;
+    this->dt = (float)period / 1000;
+    
+    this->condIntegralMargin = condIntegralMargin;
+
     this->lastErrorQueue = xQueueCreate(1, sizeof(float));
     this->integralQueue = xQueueCreate(1, sizeof(float));
 
     this->controlTargetQueue = xQueueCreate(1, sizeof(float));
-    this->inputQueue = xQueueCreate(1, sizeof(float));
     this->controlValueQueue = xQueueCreate(1, sizeof(float));
 
     this->pidCoefsQueue = xQueueCreate(1, sizeof(pidCoefs_t));
 
     this->resetSemaphore = xSemaphoreCreateBinary();
-
-    this->period = period;
-    this->dt = (float)period / 1000;
-
-    this->condIntegralMargin = condIntegralMargin;
 
     xTaskCreate(
         vTaskUpdate,
@@ -52,10 +59,6 @@ void PID::setControlTarget(float newControlTarget) {
     resetIntegral();
 }
 
-void PID::setInput(float * newInput) {
-    xQueueOverwrite(inputQueue, newInput);
-}
-
 
 // Update Task
 
@@ -77,7 +80,7 @@ void PID::vTaskUpdate(void * parameters) {
         }
 
         if(xQueuePeek(pid->controlTargetQueue, &controlTarget, 0) == pdTRUE) {
-            xQueuePeek(pid->inputQueue, &input, 0);
+            pid->getInput(&input);
 
             error = controlTarget - input;
 
@@ -96,8 +99,8 @@ void PID::vTaskUpdate(void * parameters) {
                 pidCoefs.ki * integral +
                 pidCoefs.kd * derivative;
 
+            pid->setControlValue(&controlValue);
             xQueueOverwrite(pid->controlValueQueue, &controlValue);
-
 
             lastError = error;
 

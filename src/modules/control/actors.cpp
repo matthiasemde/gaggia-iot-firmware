@@ -86,15 +86,16 @@ PwmActor::PwmActor(
     pwmDevice->timer[pwmTimer].mode.mode = MCPWM_UP_COUNTER;        // Set timer 0 to increment
     pwmDevice->timer[pwmTimer].mode.start = 2;                      // Set timer 0 to free-run
 
-    setPowerLevel(0.0);
+    float pwmLevel = 0.0;
+    setPowerLevel(&pwmLevel);
 }
 
 // Accessors
 
 // Mutators
-void PwmActor::setPowerLevel(float newPowerLevel) {
+void PwmActor::setPowerLevel(float * newPowerLevel) {
     // convert from float (minOut - maxOut) to int (0 - maxDutyCycle)
-    dutyCycle = (uint16_t) round((active ? constrain(newPowerLevel, minOut, maxOut) : minOut) * maxDutyCycle);
+    dutyCycle = (uint16_t) round((active ? constrain(*newPowerLevel, minOut, maxOut) : minOut) * maxDutyCycle);
     pwmDevice->channel[pwmTimer].cmpr_value[MCPWM_OPR_A].val = dutyCycle;
 }
 

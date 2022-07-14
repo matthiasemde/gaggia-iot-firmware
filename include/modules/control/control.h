@@ -36,11 +36,11 @@ namespace Control {
     void init();
 
     // Accessors
-    float getRawTemperature();
-    float getSmoothedTemperature();
+    void getRawTemperature(float * value);
+    void getSmoothedTemperature(float * value);
 
-    float getRawPressure();
-    float getSmoothedPressure();
+    void getRawPressure(float * value);
+    void getSmoothedPressure(float * value);
 
     configuration_t getActiveConfiguration();
 
@@ -49,6 +49,8 @@ namespace Control {
     // Mutators
     void turnOnHeater();
     void shutOffHeater();
+    void setHeaterPower(float * powerLevel);
+    void setPumpPower(float * powerLevel);
 
     void setTemperatureTarget(float newTarget);
     void setPressureTarget(float newTarget);
@@ -67,9 +69,6 @@ namespace Control {
 
     void openSolenoid();
     void closeSolenoid();
-
-    // Update function needs to be called each loop
-    void vTaskUpdate(void * parameters);
 
     String status();
 };

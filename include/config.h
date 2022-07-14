@@ -9,8 +9,8 @@
 
 #define TEMP_CS_PIN GPIO_NUM_17
 #define TEMP_RDY_PIN GPIO_NUM_16
-
 #define TEMP_RREF 430.0
+#define TEMP_SMOOTHING_COEFFICIENT 0.8 // 0.0 no smoothing, 0.99 strong smoothing
 
 #define DO_THERMAL_RUNAWAY_PROTECTION false
 #define TRP_MAX_DIFF_TO_TARGET 0.5f
@@ -43,12 +43,14 @@
 
 #define PUMP_PWM_CHANNEL 3
 #define PUMP_PWM_FREQUENCY 1000 // Kemo M150 Pulse Converter requires 1-10 kHz
+#define PUMP_PWM_MIN_DUTY_CYCLE 0.1f
+#define PUMP_PWM_MAX_DUTY_CYCLE 0.9f
 
 #define PRESSURE_SENSOR_PIN GPIO_NUM_34
 #define PRESSURE_POLL_FREQUENCY 20          // in Hz
 #define PRESSURE_SENSOR_OFFSET 0.2
 #define PRESSURE_SENSOR_SLOPE 0.003366
+#define PRESSURE_SMOOTHING_COEFFICIENT 0.8 // 0.0 no smoothing, 0.99 strong smoothing
 
-const float smoothingCoefficient = 0.8; // 0.0 no smoothing, 0.99 strong smoothing
 
 #endif
